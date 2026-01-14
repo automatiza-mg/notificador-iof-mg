@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Notificações - Diário Oficial</title>
+</head>
+<body>
+    <h2>Novas notificações - Diário Oficial</h2>
+    <p>Foram encontradas {{ count }} novas notificações para o Diário Oficial do dia {{ publish_date }} para os termos:</p>
+    <ul>
+        {% for term in search_terms %}
+        <li>{{ term.term }}</li>
+        {% endfor %}
+    </ul>
+    
+    <h3>Os trechos destacados são:</h3>
+    <ul>
+        {% for highlight in highlights %}
+        <li>
+            <strong>Página {{ highlight.page }}:</strong><br>
+            {{ highlight.content }}<br>
+            <a href="{{ highlight.page_url }}">Ver página</a>
+        </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
+

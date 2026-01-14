@@ -1,0 +1,4228 @@
+Você é um Arquiteto de Software sênior com experiência em Go, Python (Flask) e React. Este arquivo contém o código-fonte selecionado de um projeto chamado "automatiza-mg-ro-domg", que atualmente roda em Go no backend e React no frontend. Sua tarefa é me auxiliar na migração completa deste sistema para uma stack Python com Flask.
+
+Estrutura original do Diretorio:
+└── automatiza-mg-ro-domg/
+    ├── README.md
+    ├── Dockerfile
+    ├── go.mod
+    ├── go.sum
+    ├── Makefile
+    ├── sqlc.yaml
+    ├── .env.example
+    ├── .prettierignore
+    ├── cmd/
+    │   └── server/
+    │       └── main.go
+    ├── internal/
+    │   ├── api/
+    │   │   ├── errors.go
+    │   │   ├── features.go
+    │   │   ├── handle_auth.go
+    │   │   ├── handle_config.go
+    │   │   ├── handle_search_config.go
+    │   │   ├── middlewares.go
+    │   │   ├── routes.go
+    │   │   ├── server.go
+    │   │   └── utils.go
+    │   ├── auth/
+    │   │   ├── azure.go
+    │   │   ├── context.go
+    │   │   ├── service.go
+    │   │   ├── service_test.go
+    │   │   ├── session.go
+    │   │   ├── session_test.go
+    │   │   ├── token.go
+    │   │   ├── token_test.go
+    │   │   └── user.go
+    │   ├── config/
+    │   │   └── config.go
+    │   ├── database/
+    │   │   ├── accounts.sql.go
+    │   │   ├── db.go
+    │   │   ├── models.go
+    │   │   ├── search.sql.go
+    │   │   ├── sessions.sql.go
+    │   │   ├── tokens.sql.go
+    │   │   ├── users.sql.go
+    │   │   └── queries/
+    │   │       ├── accounts.sql
+    │   │       ├── search.sql
+    │   │       ├── sessions.sql
+    │   │       ├── tokens.sql
+    │   │       └── users.sql
+    │   ├── iof/
+    │   │   ├── client.go
+    │   │   ├── download.go
+    │   │   └── v1/
+    │   │       └── consulta.go
+    │   ├── logging/
+    │   │   ├── logger.go
+    │   │   └── logger_test.go
+    │   ├── mailer/
+    │   │   ├── mailer.go
+    │   │   ├── notification.go
+    │   │   ├── notification_test.go
+    │   │   └── templates/
+    │   │       └── notification.tmpl
+    │   ├── pagination/
+    │   │   ├── pagination.go
+    │   │   └── pagination_test.go
+    │   ├── pdf/
+    │   │   ├── text.go
+    │   │   └── text_test.go
+    │   ├── postgres/
+    │   │   ├── conn.go
+    │   │   ├── test_util.go
+    │   │   └── util.go
+    │   ├── search/
+    │   │   ├── config.go
+    │   │   ├── config_test.go
+    │   │   ├── context.go
+    │   │   ├── report.go
+    │   │   ├── search.go
+    │   │   ├── search_test.go
+    │   │   ├── source.go
+    │   │   ├── source_test.go
+    │   │   ├── schema/
+    │   │   │   └── sqlite.sql
+    │   │   └── testdata/
+    │   │       └── 2025-08-15.json
+    │   ├── tasks/
+    │   │   ├── daily_gazette.go
+    │   │   └── notify.go
+    │   ├── teams/
+    │   │   ├── notify.go
+    │   │   └── notify_test.go
+    │   └── validator/
+    │       ├── helpers.go
+    │       ├── helpers_test.go
+    │       ├── validator.go
+    │       └── validator_test.go
+    ├── migrations/
+    │   ├── 20250806133158_auth.sql
+    │   ├── 20250807180105_search.sql
+    │   ├── 20250812123103_add_mail_subject.sql
+    │   ├── 20250819125426_add_active.sql
+    │   ├── 20250827174303_tokens.sql
+    │   ├── 20250917125026_add_search_config_description.sql
+    │   └── migrations.go
+    ├── ui/
+    │   ├── README.md
+    │   ├── components.json
+    │   ├── eslint.config.js
+    │   ├── index.html
+    │   ├── package.json
+    │   ├── tsconfig.app.json
+    │   ├── tsconfig.json
+    │   ├── tsconfig.node.json
+    │   ├── vite.config.ts
+    │   ├── public/
+    │   │   ├── logo_automatiza_branco.webp
+    │   │   └── simbolo_automatiza.webp
+    │   └── src/
+    │       ├── app.tsx
+    │       ├── index.css
+    │       ├── main.tsx
+    │       ├── vite-env.d.ts
+    │       ├── components/
+    │       │   ├── backtest.tsx
+    │       │   ├── microsoft-sign-in.tsx
+    │       │   ├── mode-toggle.tsx
+    │       │   ├── query-provider.tsx
+    │       │   ├── search-config-form.tsx
+    │       │   ├── simbolo-automatiza.tsx
+    │       │   ├── teams-icon.tsx
+    │       │   ├── theme-provider.tsx
+    │       │   └── ui/
+    │       │       ├── button.tsx
+    │       │       ├── calendar.tsx
+    │       │       ├── checkbox.tsx
+    │       │       ├── dialog.tsx
+    │       │       ├── dropdown-menu.tsx
+    │       │       ├── form.tsx
+    │       │       ├── input.tsx
+    │       │       ├── label.tsx
+    │       │       ├── popover.tsx
+    │       │       ├── sonner.tsx
+    │       │       ├── switch.tsx
+    │       │       └── textarea.tsx
+    │       ├── hooks/
+    │       │   ├── use-api-config.tsx
+    │       │   ├── use-auth.tsx
+    │       │   └── use-search-configs.tsx
+    │       ├── lib/
+    │       │   ├── api.ts
+    │       │   └── utils.ts
+    │       └── pages/
+    │           ├── adicionar.tsx
+    │           ├── auth-layout.tsx
+    │           ├── entrar.tsx
+    │           ├── index.tsx
+    │           ├── private-layout.tsx
+    │           └── search-config.tsx
+    └── .github/
+        └── workflows/
+            └── go-test.yaml
+
+DIRETRIZES DE ANÁLISE:
+
+Lógica de Negócio: Priorize a lógica de processamento de arquivos (PDFs, Diários Oficiais) e o motor de busca. Esta é a parte mais crítica do sistema.
+
+Equivalência Pythonic: Ao sugerir a conversão, não tente "traduzir literalmente" o código Go. Em vez disso, utilize os padrões e bibliotecas recomendadas do ecossistema Python/Flask (ex: SQLAlchemy para o banco, Marshmallow/Pydantic para validação, Requests/Httpx para requisições).
+
+Mapeamento de Rotas: Identifique os Handlers e Middlewares em Go e sugira como estruturar os Blueprints e Decoradores de rota no Flask.
+
+Persistência: Utilize as migrations e queries SQL fornecidas para planejar a camada de dados em Python.
+
+Frontend: Analise a lógica de consumo de API nos arquivos React para garantir que o novo backend em Flask atenda a todos os requisitos da interface.
+
+Processamento em Segundo Plano: O projeto original utiliza a biblioteca river para tarefas assíncronas (workers). Na conversão para Python/Flask, considere sugerir o uso de Celery ou Redis Queue (RQ) para manter essa funcionalidade.
+
+ESTRUTURA DO ARQUIVO: Abaixo, cada arquivo original está delimitado por: --- FILE: caminho/do/arquivo ---. Considere a hierarquia de diretórios para entender as dependências entre os módulos.
+
+INÍCIO DO CÓDIGO FONTE:
+
+
+Arquivos selecionados da estrutura original do projeto:
+
+└── ./
+    ├── cmd
+    │   └── server
+    │       └── main.go
+    ├── internal
+    │   ├── api
+    │   │   ├── errors.go
+    │   │   ├── features.go
+    │   │   ├── handle_auth.go
+    │   │   ├── handle_config.go
+    │   │   ├── handle_search_config.go
+    │   │   ├── middlewares.go
+    │   │   ├── routes.go
+    │   │   ├── server.go
+    │   │   └── utils.go
+    │   ├── auth
+    │   │   ├── azure.go
+    │   │   ├── context.go
+    │   │   ├── service.go
+    │   │   ├── session.go
+    │   │   ├── token.go
+    │   │   └── user.go
+    │   ├── config
+    │   │   └── config.go
+    │   ├── database
+    │   │   ├── queries
+    │   │   │   ├── accounts.sql
+    │   │   │   ├── search.sql
+    │   │   │   ├── sessions.sql
+    │   │   │   ├── tokens.sql
+    │   │   │   └── users.sql
+    │   │   ├── db.go
+    │   │   └── models.go
+    │   ├── iof
+    │   │   ├── v1
+    │   │   │   └── consulta.go
+    │   │   ├── client.go
+    │   │   └── download.go
+    │   ├── mailer
+    │   │   ├── templates
+    │   │   │   └── notification.tmpl
+    │   │   ├── mailer.go
+    │   │   └── notification.go
+    │   ├── pdf
+    │   │   └── text.go
+    │   ├── search
+    │   │   ├── schema
+    │   │   │   └── sqlite.sql
+    │   │   ├── config.go
+    │   │   ├── context.go
+    │   │   ├── report.go
+    │   │   ├── search.go
+    │   │   └── source.go
+    │   ├── tasks
+    │   │   ├── daily_gazette.go
+    │   │   └── notify.go
+    │   └── teams
+    │       └── notify.go
+    ├── migrations
+    │   ├── 20250806133158_auth.sql
+    │   ├── 20250807180105_search.sql
+    │   ├── 20250812123103_add_mail_subject.sql
+    │   ├── 20250819125426_add_active.sql
+    │   ├── 20250827174303_tokens.sql
+    │   ├── 20250917125026_add_search_config_description.sql
+    │   └── migrations.go
+    ├── ui
+    │   └── src
+    │       ├── components
+    │       │   └── search-config-form.tsx
+    │       ├── hooks
+    │       │   └── use-search-configs.tsx
+    │       ├── lib
+    │       │   └── api.ts
+    │       └── pages
+    │           └── search-config.tsx
+    └── README.md
+
+
+
+--- README.md ---
+
+# Ro-DOMG
+
+Serviço de notificações do Diário Oficial de Minas Gerais.
+
+## Requisitos
+
+1. [Go 1.25](https://go.dev)
+2. [Node 22](https://nodejs.org/en)
+3. [Postgres 17](https://www.postgresql.org)
+4. [River](https://riverqueue.com/docs/migrations)
+5. [Goose](https://pressly.github.io/goose/)
+6. [sqlc](https://sqlc.dev/)
+
+### PDF
+
+A dependência `poppler-utils` é necessária pelo sistema para extrair o texto dos PDF's do Diário
+Oficial. Para instalar, digite o comando abaixo:
+
+``` bash
+sudo apt-get install poppler-utils
+```
+
+## Configuração
+
+As configurações do servidor são feitas através da leitura de variáveis de ambiente,
+que também podem ser definidas em um arquivo `.env` na raiz do projeto. O arquivo
+`.env.example` possui uma configuração de exemplo.
+
+
+--- cmd/server/main.go ---
+
+package main
+
+import (
+	"context"
+	"errors"
+	"log"
+	"log/slog"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
+
+	"github.com/joho/godotenv"
+	"github.com/riverqueue/river"
+	"github.com/riverqueue/river/riverdriver/riverpgxv5"
+	"rodomg.automatiza.planejamento.mg.gov.br/internal/api"
+	"rodomg.automatiza.planejamento.mg.gov.br/internal/config"
+	"rodomg.automatiza.planejamento.mg.gov.br/internal/iof"
+	"rodomg.automatiza.planejamento.mg.gov.br/internal/logging"
+	"rodomg.automatiza.planejamento.mg.gov.br/internal/mailer"
+	"rodomg.automatiza.planejamento.mg.gov.br/internal/postgres"
+	"rodomg.automatiza.planejamento.mg.gov.br/internal/search"
+	"rodomg.automatiza.planejamento.mg.gov.br/internal/tasks"
+)
+
+const (
+	writeTimeout = 10 * time.Second
+	readTimeout  = 5 * time.Second
+	idleTimeout  = time.Minute
+)
+
+func main() {
+	_ = godotenv.Load()
+	if err := run(); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func run() error {
+	ctx := context.Background()
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+
+	cfg, err := config.NewFromEnv()
+	if err != nil {
+		return err
+	}
+
+	logger := logging.NewLogger(cfg.IsDev(), os.Stdout)
+
+	pool, err := postgres.New(ctx, cfg.DB)
+	if err != nil {
+		return err
+	}
+	defer pool.Close()
+
+	source, err := search.NewSource("diarios.db")
+	if err != nil {
+		return err
+	}
+
+	workers := river.NewWorkers()
+	river.AddWorker(workers, tasks.NewDailyGazetteWorker(source, pool, logger))
+	river.AddWorker(workers, tasks.NewNotifyWorker(logger, pool))
+	river.AddWorker(workers, tasks.NewNotifyTeamsWorker())
+
+	queue, err := river.NewClient(riverpgxv5.New(pool), &river.Config{
+		Workers: workers,
+		Queues: map[string]river.QueueConfig{
+			river.QueueDefault: {MaxWorkers: 100},
+		},
+		Logger: logger,
+	})
+	if err != nil {
+		return err
+	}
+
+	if err := queue.Start(ctx); err != nil {
+		return err
+	}
+
+	mail, err := mailer.New(cfg.Mail)
+	if err != nil {
+		return err
+	}
+
+	s, err := api.NewServer(&api.ServerConfig{
+		Config:  cfg,
+		Logger:  logger,
+		Pool:    pool,
+		Gazette: iof.NewClient(cfg.IOF),
+		Source:  source,
+		Queue:   queue,
+		Mail:    mail,
+	})
+	if err != nil {
+		return err
+	}
+
+	srv := &http.Server{
+		Addr:         ":4000",
+		Handler:      s.Routes(),
+		WriteTimeout: writeTimeout,
+		ReadTimeout:  readTimeout,
+		IdleTimeout:  idleTimeout,
+		ErrorLog:     slog.NewLogLogger(logger.Handler(), slog.LevelError),
+	}
+
+	go func() {
+		<-quit
+
+		ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+		defer cancel()
+
+		err := srv.Shutdown(ctx)
+		if err != nil {
+			logger.Error("failed to shutdown server", slog.String("err", err.Error()))
+		}
+
+		err = queue.Stop(ctx)
+		if err != nil {
+			logger.Error("failed to stop river queue", slog.String("err", err.Error()))
+		}
+	}()
+
+	logger.Info("starting server", slog.String("addr", srv.Addr))
+	err = srv.ListenAndServe()
+	if !errors.Is(err, http.ErrServerClosed) {
+		return err
+	}
+	return nil
+}
+
+
+--- internal/api/errors.go ---
+
+package api
+
+import (
+	"fmt"
+	"log/slog"
+	"net/http"
+)
+
+type ErrorResponse struct {
+	Code    string            `json:"code"`
+	Message string            `json:"message"`
+	Errors  map[string]string `json:"errors,omitempty"`
+}
+
+func (s *Server) serverError(w http.ResponseWriter, r *http.Request, err error) {
+	s.logger.Error(
+		"server error",
+		slog.String("method", r.Method),
+		slog.String("uri", r.URL.RequestURI()),
+		slog.String("err", err.Error()),
+	)
+	s.writeJSON(w, r, http.StatusInternalServerError, ErrorResponse{
+		Code:    "internal_error",
+		Message: "O servidor encontrou um erro inesperado",
+	})
+}
+
+func (s *Server) badRequest(w http.ResponseWriter, r *http.Request, err error) {
+	s.logger.Warn(
+		"bad request error",
+		slog.String("method", r.Method),
+		slog.String("uri", r.URL.RequestURI()),
+		slog.String("err", err.Error()),
+	)
+	s.writeJSON(w, r, http.StatusBadRequest, ErrorResponse{
+		Code:    "bad_request",
+		Message: "A requisição é mal formada ou inválida",
+	})
+}
+
+func (s *Server) notFound(w http.ResponseWriter, r *http.Request) {
+	s.writeJSON(w, r, http.StatusNotFound, ErrorResponse{
+		Code:    "not_found",
+		Message: "O recurso requisitado não foi encontrado",
+	})
+}
+
+func (s *Server) methodNotAllowed(w http.ResponseWriter, r *http.Request) {
+	s.writeJSON(w, r, http.StatusMethodNotAllowed, ErrorResponse{
+		Code:    "method_not_allowed",
+		Message: fmt.Sprintf("O método %q não é permitido para %q", r.Method, r.URL.Path),
+	})
+}
+
+func (s *Server) validationError(w http.ResponseWriter, r *http.Request, errors map[string]string) {
+	s.writeJSON(w, r, http.StatusUnprocessableEntity, ErrorResponse{
+		Code:    "validation_failed",
+		Message: "Os dados informados são inválidos",
+		Errors:  errors,
+	})
+}
+
+func (s *Server) invalidToken(w http.ResponseWriter, r *http.Request) {
+	s.writeJSON(w, r, http.StatusUnauthorized, ErrorResponse{
+		Code:    "invalid_token",
+		Message: "O token informado é inválido ou expirou",
+	})
+}
+
+func (s *Server) unauthorized(w http.ResponseWriter, r *http.Request) {
+	s.writeJSON(w, r, http.StatusUnauthorized, ErrorResponse{
+		Code:    "unauthorized",
+		Message: "Você deve estar autenticado para acessar esse recurso",
+	})
+}
+
+
+--- internal/api/features.go ---
+
+package api
+
+func (s *Server) backtestEnabled() bool {
+	return s.cfg.IsDev()
+}
+
+
+--- internal/api/handle_auth.go ---
+
+package api
+
+import (
+	"crypto/rand"
+	"fmt"
+	"net/http"
+	"time"
+
+	"rodomg.automatiza.planejamento.mg.gov.br/internal/auth"
+)
+
+const (
+	stateName = "__state"
+	stateTTL  = 180 // 3min
+
+	sessName = "sess"
+)
+
+// Creates a new state value and sets it to a cookie.
+func newState(w http.ResponseWriter) string {
+	state := rand.Text()
+	http.SetCookie(w, &http.Cookie{
+		Name:     stateName,
+		Value:    state,
+		MaxAge:   stateTTL,
+		Path:     "/",
+		HttpOnly: true,
+	})
+	return state
+}
+
+// Verifies if the form state matches the cookie state.
+func verifyState(w http.ResponseWriter, r *http.Request) error {
+	state := r.FormValue("state")
+	stateCookie, err := r.Cookie(stateName)
+	if err != nil {
+		return fmt.Errorf("failed to get state cookie: %w", err)
+	}
+
+	http.SetCookie(w, &http.Cookie{
+		Name:     stateName,
+		Path:     "/",
+		HttpOnly: true,
+		MaxAge:   -1,
+		Expires:  time.Unix(0, 0),
+	})
+	if state != stateCookie.Value {
+		return fmt.Errorf("mismatched state")
+	}
+
+	return nil
+}
+
+func (s *Server) handleAzureRedirect() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		state := newState(w)
+		url := s.azure.AuthCodeURL(state)
+		http.Redirect(w, r, url, http.StatusFound)
+	}
+}
+
+func (s *Server) handleAzureCallback() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if err := r.ParseForm(); err != nil {
+			http.Error(w, "Malformed request", http.StatusBadRequest)
+			return
+		}
+
+		if err := verifyState(w, r); err != nil {
+			http.Error(w, "Missing or invalid state", http.StatusBadRequest)
+			return
+		}
+
+		code := r.FormValue("code")
+		token, err := s.azure.Exchange(r.Context(), code)
+		if err != nil {
+			s.serverError(w, r, err)
+			return
+		}
+
+		au, err := s.azure.CurrentUser(r.Context(), token)
+		if err != nil {
+			s.serverError(w, r, err)
+			return
+		}
+
+		user, err := s.auth.AzureSignIn(r.Context(), au)
+		if err != nil {
+			s.serverError(w, r, err)
+			return
+		}
+
+		sessToken, err := s.auth.CreateSession(r.Context(), auth.CreateSessionParams{
+			UserID:    user.ID,
+			UserAgent: r.UserAgent(),
+			IPAddress: r.RemoteAddr,
+		})
+		if err != nil {
+			s.serverError(w, r, err)
+			return
+		}
+
+		w.Header().Set("Cache-Control", "no-store")
+		w.Header().Set("Pragma", "no-cache")
+		http.SetCookie(w, &http.Cookie{
+			Name:     sessName,
+			Value:    sessToken.Token,
+			Expires:  sessToken.ExpiresAt,
+			HttpOnly: true,
+			Secure:   s.cfg.IsProd(),
+			Path:     "/",
+		})
+
+		http.Redirect(w, r, s.cfg.ClientURL, http.StatusFound)
+	}
+}
+
+func (s *Server) handleCurrentUser() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		user := auth.UserFromContext(r.Context())
+		s.writeJSON(w, r, http.StatusOK, user)
+	}
+}
+
+func (s *Server) handleSignOut() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		cookie, err := r.Cookie(sessName)
+		if err != nil {
+			s.serverError(w, r, fmt.Errorf("session cookie not present: %w", err))
+			return
+		}
+		if err := s.auth.DeleteSession(r.Context(), cookie.Value); err != nil {
+			s.serverError(w, r, fmt.Errorf("session cookie not present: %w", err))
+			return
+		}
+
+		// Clear session cookie
+		w.Header().Set("Cache-Control", "no-store, no-cache, max-age=0, must-revalidate, proxy-revalidate")
+		w.Header().Set("Pragma", "no-cache")
+		w.Header().Set("Surrogate-Control", "no-store")
+		http.SetCookie(w, &http.Cookie{
+			Name:     sessName,
+			Path:     "/",
+			HttpOnly: true,
+			Secure:   s.cfg.IsProd(),
+			MaxAge:   -1,
+			Expires:  time.Unix(0, 0),
+		})
+
+		w.WriteHeader(http.StatusNoContent)
+	}
+}
+
+
+--- internal/api/handle_config.go ---
+
+package api
+
+import "net/http"
+
+// Flags de features da API habilitadas
+type ApiFeatures struct {
+	Backtest bool `json:"backtest"`
+}
+
+func (s *Server) handleApiFeatures() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		cfg := ApiFeatures{
+			Backtest: s.backtestEnabled(),
+		}
+
+		s.writeJSON(w, r, http.StatusOK, cfg)
+	}
+}
+
+
+--- internal/api/handle_search_config.go ---
+
+package api
+
+import (
+	"cmp"
+	"encoding/base64"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"log/slog"
+	"net/http"
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"time"
+
+	"rodomg.automatiza.planejamento.mg.gov.br/internal/auth"
+	"rodomg.automatiza.planejamento.mg.gov.br/internal/iof"
+	iofv1 "rodomg.automatiza.planejamento.mg.gov.br/internal/iof/v1"
+	"rodomg.automatiza.planejamento.mg.gov.br/internal/search"
+	"rodomg.automatiza.planejamento.mg.gov.br/internal/validator"
+)
+
+type SearchTerm struct {
+	Term  string
+	Exact bool
+}
+
+type CreateSearchConfig struct {
+	Label        string       `json:"label"`
+	Description  string       `json:"description"`
+	AttachCSV    bool         `json:"attach_csv"`
+	MailTo       []string     `json:"mail_to"`
+	MailSubject  string       `json:"mail_subject"`
+	TeamsWebhook string       `json:"teams_webhook"`
+	Terms        []SearchTerm `json:"terms"`
+
+	validator.Validator `json:"-"`
+}
+
+func (input *CreateSearchConfig) Validate() {
+	// Preprocess
+	input.Label = strings.TrimSpace(input.Label)
+	if input.MailTo == nil {
+		input.MailTo = make([]string, 0)
+	}
+	for idx := range input.MailTo {
+		input.MailTo[idx] = strings.TrimSpace(input.MailTo[idx])
+	}
+
+	// Validate
+	input.Check(validator.NotBlank(input.Label), "label", "Deve ser preenchido")
+	input.Check(validator.MaxLength(input.Label, 255), "label", "Deve possuir até 255 caracteres")
+	input.Check(validator.MaxLength(input.MailSubject, 255), "mail_subject", "Deve possuir até 255 caracteres")
+	input.Check(validator.MaxLength(input.Description, 1000), "description", "Deve possuir até 1000 caracteres")
+	input.Check(input.TeamsWebhook == "" || validator.IsHTTPSUrl(input.TeamsWebhook), "teams_webhook", "Deve ser uma url válida")
+	input.Check(len(input.Terms) <= 5, "terms", "Deve possuir no máximo 5 items")
+	for idx, term := range input.Terms {
+		name := fmt.Sprintf("terms[%d].term", idx)
+		input.Check(validator.NotBlank(term.Term), name, "Deve ser preenchido")
+		input.Check(validator.MaxLength(term.Term, 255), name, "Deve possuir até 255 caracteres")
+	}
+	input.Check(len(input.MailTo) <= 5, "mail_to", "Deve possuir no máximo 5 items")
+	for idx, mail := range input.MailTo {
+		name := fmt.Sprintf("mail_to[%d]", idx)
+		input.Check(validator.ValidEmail(mail), name, "Deve ser um email válido")
+	}
+}
+
+func (s *Server) handleSearchConfigCreate() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		user := auth.UserFromContext(r.Context())
+
+		var input CreateSearchConfig
+		err := json.NewDecoder(r.Body).Decode(&input)
+		if err != nil {
+			s.badRequest(w, r, err)
+			return
+		}
+
+		if input.Validate(); !input.IsValid() {
+			s.validationError(w, r, input.FieldErrors)
+			return
+		}
+
+		searchConfig := &search.Config{
+			Label:        input.Label,
+			Description:  input.Description,
+			AttachCSV:    input.AttachCSV,
+			MailTo:       Dedup(input.MailTo),
+			MailSubject:  cmp.Or(input.MailSubject, "Publicações do Diário Oficial de MG"),
+			TeamsWebhook: input.TeamsWebhook,
+			UserID:       user.ID,
+		}
+		searchConfig.Terms = make([]*search.Term, 0, len(input.Terms))
+		for _, term := range input.Terms {
+			searchConfig.Terms = append(searchConfig.Terms, &search.Term{
+				Term:  term.Term,
+				Exact: term.Exact,
+			})
+		}
+
+		err = s.search.SaveConfig(r.Context(), searchConfig)
+		if err != nil {
+			s.serverError(w, r, err)
+			return
+		}
+
+		s.writeJSON(w, r, http.StatusCreated, searchConfig)
+	}
+}
+
+func (s *Server) handleSearchConfigList() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		user := auth.UserFromContext(r.Context())
+		searchConfigs, err := s.search.ListUserConfigs(r.Context(), user.ID)
+		if err != nil {
+			s.serverError(w, r, err)
+			return
+		}
+
+		s.writeJSON(w, r, http.StatusOK, searchConfigs)
+	}
+}
+
+func (s *Server) handleSearchConfigDetail() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		user := auth.UserFromContext(r.Context())
+
+		id, err := strconv.ParseInt(r.PathValue("configID"), 10, 64)
+		if err != nil || id < 1 {
+			s.notFound(w, r)
+			return
+		}
+
+		searchConfig, err := s.search.GetConfig(r.Context(), id)
+		if err != nil {
+			switch {
+			case errors.Is(err, search.ErrConfigNotFound):
+				s.notFound(w, r)
+			default:
+				s.serverError(w, r, err)
+			}
+			return
+		}
+
+		if searchConfig.UserID != user.ID {
+			s.notFound(w, r)
+			return
+		}
+
+		s.writeJSON(w, r, http.StatusOK, searchConfig)
+	}
+}
+
+type UpdateSearchConfig struct {
+	Label        string       `json:"label"`
+	Description  string       `json:"description"`
+	AttachCSV    bool         `json:"attach_csv"`
+	MailTo       []string     `json:"mail_to"`
+	MailSubject  string       `json:"mail_subject"`
+	TeamsWebhook string       `json:"teams_webhook"`
+	Terms        []SearchTerm `json:"terms"`
+
+	validator.Validator `json:"-"`
+}
+
+func (input *UpdateSearchConfig) Validate() {
+	// Preprocess
+	input.Label = strings.TrimSpace(input.Label)
+	if input.MailTo == nil {
+		input.MailTo = make([]string, 0)
+	}
+	for idx := range input.MailTo {
+		input.MailTo[idx] = strings.TrimSpace(input.MailTo[idx])
+	}
+
+	// Validate
+	input.Check(validator.NotBlank(input.Label), "label", "Deve ser preenchido")
+	input.Check(validator.MaxLength(input.Label, 255), "label", "Deve possuir até 255 caracteres")
+	input.Check(validator.MaxLength(input.MailSubject, 255), "mail_subject", "Deve possuir até 255 caracteres")
+	input.Check(validator.MaxLength(input.Description, 1000), "description", "Deve possuir até 1000 caracteres")
+	input.Check(input.TeamsWebhook == "" || validator.IsHTTPSUrl(input.TeamsWebhook), "teams_webhook", "Deve ser uma url válida")
+	input.Check(len(input.Terms) <= 5, "terms", "Deve possuir no máximo 5 items")
+	for idx, term := range input.Terms {
+		name := fmt.Sprintf("terms[%d].term", idx)
+		input.Check(validator.NotBlank(term.Term), name, "Deve ser preenchido")
+		input.Check(validator.MaxLength(term.Term, 255), name, "Deve possuir até 255 caracteres")
+	}
+	input.Check(len(input.MailTo) <= 5, "mail_to", "Deve possuir no máximo 5 items")
+	for idx, mail := range input.MailTo {
+		name := fmt.Sprintf("mail_to[%d]", idx)
+		input.Check(validator.ValidEmail(mail), name, "Deve ser um email válido")
+	}
+}
+
+func (s *Server) handleSearchConfigUpdate() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var input UpdateSearchConfig
+		err := json.NewDecoder(r.Body).Decode(&input)
+		if err != nil {
+			s.badRequest(w, r, err)
+			return
+		}
+
+		if input.Validate(); !input.IsValid() {
+			s.validationError(w, r, input.FieldErrors)
+			return
+		}
+
+		searchConfig := search.ConfigFromContext(r.Context())
+		searchConfig.Label = input.Label
+		searchConfig.Description = input.Description
+		searchConfig.AttachCSV = input.AttachCSV
+		searchConfig.MailTo = Dedup(input.MailTo)
+		searchConfig.MailSubject = cmp.Or(input.MailSubject, "Publicações do Diário Oficial de MG")
+		searchConfig.TeamsWebhook = input.TeamsWebhook
+		searchConfig.Terms = make([]*search.Term, 0, len(input.Terms))
+		for _, term := range input.Terms {
+			searchConfig.Terms = append(searchConfig.Terms, &search.Term{
+				Term:  term.Term,
+				Exact: term.Exact,
+			})
+		}
+
+		err = s.search.UpdateConfig(r.Context(), searchConfig)
+		if err != nil {
+			s.serverError(w, r, err)
+			return
+		}
+
+		w.WriteHeader(http.StatusNoContent)
+	}
+}
+
+func (s *Server) handleSearchConfigDelete() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		user := auth.UserFromContext(r.Context())
+
+		id, err := strconv.ParseInt(r.PathValue("configID"), 10, 64)
+		if err != nil || id < 1 {
+			s.notFound(w, r)
+			return
+		}
+
+		searchConfig, err := s.search.GetConfig(r.Context(), id)
+		if err != nil {
+			switch {
+			case errors.Is(err, search.ErrConfigNotFound):
+				s.notFound(w, r)
+			default:
+				s.serverError(w, r, err)
+			}
+			return
+		}
+
+		if searchConfig.UserID != user.ID {
+			s.notFound(w, r)
+			return
+		}
+
+		err = s.search.DeleteConfig(r.Context(), id)
+		if err != nil {
+			s.serverError(w, r, err)
+			return
+		}
+
+		w.WriteHeader(http.StatusNoContent)
+	}
+}
+
+func (s *Server) handleSearchConfigBacktest() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Desabilita em prod.
+		if !s.backtestEnabled() {
+			s.notFound(w, r)
+			return
+		}
+
+		config := search.ConfigFromContext(r.Context())
+
+		v := validator.Validator{}
+
+		dateStr := r.URL.Query().Get("date")
+		date, err := time.ParseInLocation(time.DateOnly, dateStr, time.Local)
+		if err != nil {
+			v.SetFieldError("date", "Deve ser uma data no formato YYYY-MM-DD")
+		}
+		if date.After(time.Now()) {
+			v.SetFieldError("date", "Não pode ser uma data futura")
+		}
+		if !v.IsValid() {
+			s.validationError(w, r, v.FieldErrors)
+			return
+		}
+
+		hasPages, err := s.source.HasPages(date)
+		if err != nil {
+			s.serverError(w, r, err)
+			return
+		}
+		if !hasPages {
+			s.logger.Info("downloading and saving gazette", slog.String("date", date.Format(time.DateOnly)))
+			res, err := iofv1.ConsultaPorData(date)
+			if err != nil {
+				switch {
+				case errors.Is(err, iof.ErrNotFound):
+					s.notFound(w, r)
+				default:
+					s.serverError(w, r, err)
+				}
+				return
+			}
+
+			go func() {
+				raw, err := base64.StdEncoding.DecodeString(res.Dados.ArquivoCadernoPrincipal.Arquivo)
+				if err != nil {
+					s.logger.Error("failed to decode pdf", slog.String("err", err.Error()))
+					return
+				}
+				if err := s.saveGazette(date, raw); err != nil {
+					s.logger.Error("failed to save gazette", slog.String("err", err.Error()))
+				}
+			}()
+
+			pages, err := iofv1.ConvertPages(res.Dados.ArquivoCadernoPrincipal.Arquivo, date)
+			if err != nil {
+				s.serverError(w, r, err)
+				return
+			}
+			fmt.Println(len(pages))
+			err = s.source.Import(pages)
+			if err != nil {
+				s.serverError(w, r, err)
+				return
+			}
+		}
+
+		report, err := s.source.Lookup(search.TriggerBacktest, date, config.Terms)
+		if err != nil {
+			s.serverError(w, r, err)
+			return
+		}
+
+		s.writeJSON(w, r, http.StatusOK, report)
+	}
+}
+
+// Saves the gazette to filesystem. If contents is nil, downloads it from the website.
+func (s *Server) saveGazette(date time.Time, contents []byte) error {
+	if err := os.MkdirAll(s.cfg.DiariosDir, 0755); err != nil {
+		return err
+	}
+
+	fileName := date.Format(time.DateOnly) + ".pdf"
+	name := filepath.Join(s.cfg.DiariosDir, fileName)
+	_, err := os.Stat(name)
+	if err == nil {
+		return nil
+	}
+	if !os.IsNotExist(err) {
+		return err
+	}
+
+	err = os.WriteFile(name, contents, 0644)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+
+--- internal/api/middlewares.go ---
+
+package api
+
+import (
+	"errors"
+	"log/slog"
+	"net/http"
+	"strconv"
+
+	"rodomg.automatiza.planejamento.mg.gov.br/internal/auth"
+	"rodomg.automatiza.planejamento.mg.gov.br/internal/logging"
+	"rodomg.automatiza.planejamento.mg.gov.br/internal/search"
+)
+
+func (s *Server) populateUser(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		sessCookie, err := r.Cookie(sessName)
+		if err != nil {
+			ctx := auth.WithUser(r.Context(), auth.AnonymousUser)
+			next.ServeHTTP(w, r.WithContext(ctx))
+			return
+		}
+
+		sess, err := s.auth.GetSession(r.Context(), sessCookie.Value)
+		if err != nil {
+			switch {
+			case errors.Is(err, auth.ErrInvalidToken):
+				s.invalidToken(w, r)
+			default:
+				s.serverError(w, r, err)
+			}
+			return
+		}
+
+		user, err := s.auth.GetUser(r.Context(), sess.UserID)
+		if err != nil {
+			s.serverError(w, r, err)
+			return
+		}
+
+		ctx := auth.WithUser(r.Context(), user)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+func (s *Server) requireAuth(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user := auth.UserFromContext(r.Context())
+		if user.IsAnonymous() {
+			s.unauthorized(w, r)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+func (s *Server) populateLogger(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		logger := s.logger.With(
+			slog.String("method", r.Method),
+			slog.String("uri", r.URL.RequestURI()),
+		)
+		defer func() {
+			logger.Info("incoming request")
+		}()
+
+		ctx := logging.WithLogger(r.Context(), logger)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+func (s *Server) populateSearchConfig(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user := auth.UserFromContext(r.Context())
+
+		id, err := strconv.ParseInt(r.PathValue("configID"), 10, 64)
+		if err != nil || id < 1 {
+			s.notFound(w, r)
+			return
+		}
+
+		searchConfig, err := s.search.GetConfig(r.Context(), id)
+		if err != nil {
+			switch {
+			case errors.Is(err, search.ErrConfigNotFound):
+				s.notFound(w, r)
+			default:
+				s.serverError(w, r, err)
+			}
+			return
+		}
+
+		if searchConfig.UserID != user.ID {
+			s.notFound(w, r)
+			return
+		}
+
+		ctx := search.WithConfig(r.Context(), searchConfig)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+
+--- internal/api/routes.go ---
+
+package api
+
+import (
+	"net/http"
+
+	"github.com/go-chi/chi/v5"
+)
+
+func (s *Server) Routes() http.Handler {
+	r := chi.NewMux()
+	r.NotFound(s.notFound)
+	r.MethodNotAllowed(s.methodNotAllowed)
+
+	r.Use(s.populateUser, s.populateLogger)
+
+	r.Get("/auth", s.handleAzureRedirect())
+	r.Get("/auth/callback", s.handleAzureCallback())
+
+	// Private Routes
+	r.Group(func(r chi.Router) {
+		r.Use(s.requireAuth)
+
+		r.Get("/api/features", s.handleApiFeatures())
+
+		r.Route("/api/auth", func(r chi.Router) {
+			r.Get("/me", s.handleCurrentUser())
+			r.Post("/sign-out", s.handleSignOut())
+		})
+
+		r.Route("/api/search/configs", func(r chi.Router) {
+			r.Get("/", s.handleSearchConfigList())
+			r.Post("/", s.handleSearchConfigCreate())
+
+			r.Route("/{configID}", func(r chi.Router) {
+				r.Use(s.populateSearchConfig)
+
+				r.Get("/", s.handleSearchConfigDetail())
+				r.Put("/", s.handleSearchConfigUpdate())
+				r.Delete("/", s.handleSearchConfigDelete())
+
+				r.Get("/backtest", s.handleSearchConfigBacktest())
+			})
+		})
+	})
+
+	return r
+}
+
+
+--- internal/api/server.go ---
+
+package api
+
+import (
+	"log/slog"
+
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/riverqueue/river"
+	"rodomg.automatiza.planejamento.mg.gov.br/internal/auth"
+	"rodomg.automatiza.planejamento.mg.gov.br/internal/config"
+	"rodomg.automatiza.planejamento.mg.gov.br/internal/database"
+	"rodomg.automatiza.planejamento.mg.gov.br/internal/iof"
+	"rodomg.automatiza.planejamento.mg.gov.br/internal/mailer"
+	"rodomg.automatiza.planejamento.mg.gov.br/internal/search"
+)
+
+type ServerConfig struct {
+	Config  *config.Config
+	Logger  *slog.Logger
+	Pool    *pgxpool.Pool
+	Gazette *iof.Client
+	Source  *search.Source
+	Queue   *river.Client[pgx.Tx]
+	Mail    *mailer.Mailer
+}
+
+type Server struct {
+	cfg     *config.Config
+	logger  *slog.Logger
+	pool    *pgxpool.Pool
+	gazette *iof.Client
+	store   *database.Queries
+	azure   *auth.Azure
+	auth    *auth.Service
+	search  *search.Service
+	source  *search.Source
+	queue   *river.Client[pgx.Tx]
+}
+
+func NewServer(scfg *ServerConfig) (*Server, error) {
+	return &Server{
+		cfg:     scfg.Config,
+		logger:  scfg.Logger,
+		pool:    scfg.Pool,
+		gazette: scfg.Gazette,
+		source:  scfg.Source,
+		queue:   scfg.Queue,
+		store:   database.New(scfg.Pool),
+		azure:   auth.NewAzure(scfg.Config.Azure),
+		auth:    auth.New(scfg.Pool),
+		search:  search.New(scfg.Pool),
+	}, nil
+}
+
+
+--- internal/api/utils.go ---
+
+package api
+
+import (
+	"encoding/json"
+	"log/slog"
+	"net/http"
+)
+
+func (s *Server) writeJSON(w http.ResponseWriter, r *http.Request, status int, v any) {
+	b, err := json.Marshal(v)
+	if err != nil {
+		s.logger.Error(
+			"failed to write json response",
+			slog.String("method", r.Method),
+			slog.String("uri", r.URL.RequestURI()),
+		)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	_, _ = w.Write(b)
+}
+
+// Deduplicate values from a comparable slice, returning unique values.
+func Dedup[T comparable](values []T) []T {
+	set := make(map[T]struct{})
+	for _, value := range values {
+		set[value] = struct{}{}
+	}
+	out := make([]T, 0)
+	for k := range set {
+		out = append(out, k)
+	}
+	return out
+}
+
+
+--- internal/auth/azure.go ---
+
+package auth
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"io"
+	"net/http"
+
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/endpoints"
+)
+
+const (
+	azureProvider = "azure"
+	azureUserURL  = "https://graph.microsoft.com/v1.0/me"
+)
+
+type AzureConfig struct {
+	ClientID     string   `env:"AZURE_CLIENT_ID,notEmpty"`
+	ClientSecret string   `env:"AZURE_CLIENT_SECRET,notEmpty"`
+	RedirectURL  string   `env:"AZURE_REDIRECT_URL,notEmpty"`
+	TenantID     string   `env:"AZURE_TENANT_ID,notEmpty"`
+	Scopes       []string `env:"AZURE_SCOPES,notEmpty"`
+}
+
+type Azure struct {
+	cfg oauth2.Config
+}
+
+func NewAzure(acfg AzureConfig) *Azure {
+	return &Azure{
+		cfg: oauth2.Config{
+			ClientID:     acfg.ClientID,
+			ClientSecret: acfg.ClientSecret,
+			RedirectURL:  acfg.RedirectURL,
+			Scopes:       acfg.Scopes,
+			Endpoint:     endpoints.AzureAD(acfg.TenantID),
+		},
+	}
+}
+
+func (a Azure) AuthCodeURL(state string) string {
+	return a.cfg.AuthCodeURL(state)
+}
+
+func (a Azure) Exchange(ctx context.Context, code string) (*oauth2.Token, error) {
+	return a.cfg.Exchange(ctx, code)
+}
+
+type AzureUser struct {
+	ID                string `json:"id"`
+	DisplayName       string `json:"displayName"`
+	Mail              string `json:"mail"`
+	UserPrincipalName string `json:"userPrincipalName"`
+}
+
+func (a Azure) CurrentUser(ctx context.Context, token *oauth2.Token) (*AzureUser, error) {
+	client := a.cfg.Client(ctx, token)
+
+	res, err := client.Get(azureUserURL)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		b, err := io.ReadAll(res.Body)
+		if err != nil {
+			return nil, err
+		}
+		return nil, fmt.Errorf("failed to get azure current user (%d): %s", res.StatusCode, b)
+	}
+
+	var user AzureUser
+	err = json.NewDecoder(res.Body).Decode(&user)
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+
+
+--- internal/auth/context.go ---
+
+package auth
+
+import (
+	"context"
+)
+
+const (
+	userKey contextKey = iota
+)
+
+type contextKey int
+
+func WithUser(ctx context.Context, user *User) context.Context {
+	return context.WithValue(ctx, userKey, user)
+}
+
+// Attempts to get a user from context. If it's not set, returns AnonymousUser.
+func UserFromContext(ctx context.Context) *User {
+	user, ok := ctx.Value(userKey).(*User)
+	if !ok {
+		return AnonymousUser
+	}
+	return user
+}
+
+
+--- internal/auth/service.go ---
+
+package auth
+
+import (
+	"context"
+	"errors"
+	"fmt"
+	"strings"
+	"time"
+
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"rodomg.automatiza.planejamento.mg.gov.br/internal/database"
+)
+
+type Service struct {
+	pool  *pgxpool.Pool
+	store *database.Queries
+}
+
+func New(pool *pgxpool.Pool) *Service {
+	return &Service{
+		pool:  pool,
+		store: database.New(pool),
+	}
+}
+
+func (s *Service) AzureSignIn(ctx context.Context, au *AzureUser) (*User, error) {
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to start tx: %w", err)
+	}
+	defer tx.Rollback(ctx)
+
+	store := s.store.WithTx(tx)
+
+	user, err := store.GetUserForAccount(ctx, database.GetUserForAccountParams{
+		Provider:   azureProvider,
+		ProviderID: au.ID,
+	})
+	if err != nil {
+		switch {
+		case errors.Is(err, pgx.ErrNoRows):
+			email := au.Mail
+			if email == "" {
+				email = au.UserPrincipalName
+			}
+			user, err = store.SaveUser(ctx, database.SaveUserParams{
+				Email: email,
+				EmailVerifiedAt: pgtype.Timestamptz{
+					Time:  time.Now(),
+					Valid: true,
+				},
+			})
+			if err != nil {
+				switch {
+				case strings.Contains(err.Error(), "users_email_idx"):
+					return nil, ErrEmailTaken
+				default:
+					return nil, fmt.Errorf("failed to save user: %w", err)
+				}
+			}
+
+			err = store.SaveAccount(ctx, database.SaveAccountParams{
+				Provider:   azureProvider,
+				ProviderID: au.ID,
+				UserID:     user.ID,
+			})
+			if err != nil {
+				return nil, fmt.Errorf("failed to save account: %w", err)
+			}
+		default:
+			return nil, fmt.Errorf("failed to get user for account: %w", err)
+		}
+	}
+	if err := tx.Commit(ctx); err != nil {
+		return nil, fmt.Errorf("failed to commit tx: %w", err)
+	}
+
+	return mapUser(user), nil
+}
+
+
+--- internal/auth/session.go ---
+
+package auth
+
+import (
+	"context"
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/base64"
+	"errors"
+	"time"
+
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
+	"rodomg.automatiza.planejamento.mg.gov.br/internal/database"
+)
+
+var (
+	ErrInvalidToken = errors.New("invalid or expired token")
+)
+
+type Token struct {
+	Token     string    `json:"token"`
+	ExpiresAt time.Time `json:"expires_at"`
+}
+
+type Session struct {
+	ID        uuid.UUID `json:"id"`
+	UserID    uuid.UUID `json:"user_id"`
+	UserAgent string    `json:"user_agent"`
+	IPAddress string    `json:"ip_address"`
+	ExpiresAt time.Time `json:"expires_at"`
+	CreatedAt time.Time `json:"created_at"`
+}
+
+func mapSession(sess database.Session) *Session {
+	return &Session{
+		ID:        sess.ID,
+		UserID:    sess.UserID,
+		UserAgent: sess.UserAgent,
+		IPAddress: sess.IpAddress,
+		ExpiresAt: sess.ExpiresAt.Time,
+		CreatedAt: sess.CreatedAt.Time,
+	}
+}
+
+type CreateSessionParams struct {
+	UserID    uuid.UUID
+	UserAgent string
+	IPAddress string
+}
+
+func hashToken(token string) []byte {
+	h := sha256.Sum256([]byte(token))
+	return h[:]
+}
+
+func (s *Service) CreateSession(ctx context.Context, params CreateSessionParams) (*Token, error) {
+	b := make([]byte, 32)
+	rand.Read(b)
+
+	token := base64.RawURLEncoding.EncodeToString(b)
+	tokenHash := hashToken(token)
+	expiresAt := time.Now().Add(24 * time.Hour)
+
+	_, err := s.store.SaveSession(ctx, database.SaveSessionParams{
+		TokenHash: tokenHash,
+		UserID:    params.UserID,
+		UserAgent: params.UserAgent,
+		IpAddress: params.IPAddress,
+		ExpiresAt: pgtype.Timestamptz{
+			Valid: true,
+			Time:  expiresAt,
+		},
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return &Token{
+		Token:     token,
+		ExpiresAt: expiresAt,
+	}, nil
+}
+
+func (s *Service) GetSession(ctx context.Context, token string) (*Session, error) {
+	tokenHash := hashToken(token)
+	sess, err := s.store.GetActiveSession(ctx, tokenHash)
+	if err != nil {
+		switch {
+		case errors.Is(err, pgx.ErrNoRows):
+			return nil, ErrInvalidToken
+		default:
+			return nil, err
+		}
+	}
+
+	return mapSession(sess), nil
+}
+
+func (s *Service) DeleteSession(ctx context.Context, token string) error {
+	tokenHash := hashToken(token)
+	sess, err := s.store.GetActiveSession(ctx, tokenHash)
+	if err != nil {
+		return err
+	}
+
+	err = s.store.DeleteSession(ctx, sess.ID)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+
+--- internal/auth/token.go ---
+
+package auth
+
+import (
+	"context"
+	"crypto/rand"
+	"encoding/base64"
+	"errors"
+	"time"
+
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
+	"rodomg.automatiza.planejamento.mg.gov.br/internal/database"
+)
+
+var (
+	ErrNoTarget = errors.New("token has not target")
+)
+
+type Scope string
+
+const (
+	ScopeVerification  Scope = "verification"
+	ScopePasswordReset Scope = "password-reset"
+)
+
+type TokenOptions struct {
+	Target *string
+}
+
+type CreateTokenOption func(to *TokenOptions)
+
+func WithTarget(target string) CreateTokenOption {
+	return func(to *TokenOptions) {
+		to.Target = &target
+	}
+}
+
+func (s *Service) CreateToken(ctx context.Context, userID uuid.UUID, scope Scope, ttl time.Duration, opts ...CreateTokenOption) (*Token, error) {
+	var to TokenOptions
+	for _, opt := range opts {
+		opt(&to)
+	}
+
+	b := make([]byte, 32)
+	rand.Read(b)
+
+	token := base64.RawURLEncoding.EncodeToString(b)
+	tokenHash := hashToken(token)
+	expiresAt := time.Now().Add(24 * time.Hour)
+
+	params := database.SaveTokenParams{
+		Hash:   tokenHash,
+		Scope:  string(scope),
+		UserID: userID,
+		ExpiresAt: pgtype.Timestamptz{
+			Time:  expiresAt,
+			Valid: true,
+		},
+	}
+
+	if to.Target != nil {
+		params.Target = pgtype.Text{
+			String: *to.Target,
+			Valid:  true,
+		}
+	}
+
+	err := s.store.SaveToken(ctx, params)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Token{
+		Token:     token,
+		ExpiresAt: expiresAt,
+	}, nil
+}
+
+func (s *Service) GetTokenTarget(ctx context.Context, token string, scope Scope) (string, error) {
+	record, err := s.store.GetValidToken(ctx, database.GetValidTokenParams{
+		Hash:  hashToken(token),
+		Scope: string(scope),
+	})
+	if err != nil {
+		switch {
+		case errors.Is(err, pgx.ErrNoRows):
+			return "", ErrInvalidToken
+		default:
+			return "", err
+		}
+	}
+
+	if !record.Target.Valid {
+		return "", ErrNoTarget
+	}
+	return record.Target.String, nil
+}
+
+
+--- internal/auth/user.go ---
+
+package auth
+
+import (
+	"context"
+	"errors"
+	"time"
+
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
+	"rodomg.automatiza.planejamento.mg.gov.br/internal/database"
+)
+
+var (
+	ErrEmailTaken   = errors.New("user email is already taken")
+	ErrUserNotFound = errors.New("user not found")
+
+	AnonymousUser = &User{}
+)
+
+type User struct {
+	ID            uuid.UUID `json:"id"`
+	Email         string    `json:"email"`
+	EmailVerified bool      `json:"email_verified"`
+	CreatedAt     time.Time `json:"created_at"`
+	UpdatedAt     time.Time `json:"updated_at"`
+}
+
+func (u *User) IsAnonymous() bool {
+	return u == AnonymousUser
+}
+
+func mapUser(u database.User) *User {
+	return &User{
+		ID:            u.ID,
+		Email:         u.Email,
+		EmailVerified: u.EmailVerifiedAt.Valid,
+		CreatedAt:     u.CreatedAt.Time,
+		UpdatedAt:     u.UpdatedAt.Time,
+	}
+}
+
+func (s *Service) GetUser(ctx context.Context, userID uuid.UUID) (*User, error) {
+	user, err := s.store.GetUser(ctx, userID)
+	if err != nil {
+		switch {
+		case errors.Is(err, pgx.ErrNoRows):
+			return nil, ErrUserNotFound
+		default:
+			return nil, err
+		}
+	}
+	return mapUser(user), nil
+}
+
+
+--- internal/config/config.go ---
+
+package config
+
+import (
+	"github.com/caarlos0/env/v11"
+	"rodomg.automatiza.planejamento.mg.gov.br/internal/auth"
+	"rodomg.automatiza.planejamento.mg.gov.br/internal/iof"
+	"rodomg.automatiza.planejamento.mg.gov.br/internal/mailer"
+	"rodomg.automatiza.planejamento.mg.gov.br/internal/postgres"
+)
+
+type Config struct {
+	AppName       string `env:"APP_NAME,notEmpty"`
+	AppEnv        string `env:"APP_ENV" envDefault:"development"`
+	ClientURL     string `env:"CLIENT_URL" envDefault:"http://localhost:5173"`
+	SessionDomain string `env:"SESSION_DOMAIN"`
+	DiariosDir    string `env:"DIARIOS_DIR" envDefault:"diarios"`
+
+	DB    postgres.Config
+	Azure auth.AzureConfig
+	IOF   iof.Config
+	Mail  mailer.Config
+}
+
+func NewFromEnv() (*Config, error) {
+	var cfg Config
+	err := env.Parse(&cfg)
+	if err != nil {
+		return nil, err
+	}
+	return &cfg, nil
+}
+
+func (c Config) IsDev() bool {
+	return c.AppEnv == "development"
+}
+
+func (c Config) IsProd() bool {
+	return c.AppEnv == "production"
+}
+
+
+--- internal/database/db.go ---
+
+// Code generated by sqlc. DO NOT EDIT.
+// versions:
+//   sqlc v1.30.0
+
+package database
+
+import (
+	"context"
+
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
+)
+
+type DBTX interface {
+	Exec(context.Context, string, ...interface{}) (pgconn.CommandTag, error)
+	Query(context.Context, string, ...interface{}) (pgx.Rows, error)
+	QueryRow(context.Context, string, ...interface{}) pgx.Row
+}
+
+func New(db DBTX) *Queries {
+	return &Queries{db: db}
+}
+
+type Queries struct {
+	db DBTX
+}
+
+func (q *Queries) WithTx(tx pgx.Tx) *Queries {
+	return &Queries{
+		db: tx,
+	}
+}
+
+
+--- internal/database/models.go ---
+
+// Code generated by sqlc. DO NOT EDIT.
+// versions:
+//   sqlc v1.30.0
+
+package database
+
+import (
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
+)
+
+type Account struct {
+	Provider   string
+	ProviderID string
+	UserID     uuid.UUID
+}
+
+type SearchConfig struct {
+	ID           int64
+	Label        string
+	AttachCsv    bool
+	MailTo       []string
+	TeamsWebhook string
+	UserID       uuid.UUID
+	CreatedAt    pgtype.Timestamptz
+	UpdatedAt    pgtype.Timestamptz
+	MailSubject  string
+	Active       bool
+	Description  string
+}
+
+type SearchTerm struct {
+	ID             int64
+	Term           string
+	Exact          bool
+	SearchConfigID int64
+}
+
+type Session struct {
+	ID        uuid.UUID
+	TokenHash []byte
+	UserID    uuid.UUID
+	UserAgent string
+	IpAddress string
+	ExpiresAt pgtype.Timestamptz
+	CreatedAt pgtype.Timestamptz
+}
+
+type Token struct {
+	Hash      []byte
+	Scope     string
+	Target    pgtype.Text
+	UserID    uuid.UUID
+	UsedAt    pgtype.Timestamptz
+	ExpiresAt pgtype.Timestamptz
+	CreatedAt pgtype.Timestamptz
+}
+
+type User struct {
+	ID              uuid.UUID
+	Email           string
+	EmailVerifiedAt pgtype.Timestamptz
+	PasswordHash    pgtype.Text
+	CreatedAt       pgtype.Timestamptz
+	UpdatedAt       pgtype.Timestamptz
+}
+
+
+--- internal/database/queries/accounts.sql ---
+
+-- name: SaveAccount :exec
+INSERT INTO accounts (provider, provider_id, user_id)
+VALUES ($1, $2, $3);
+
+-- name: GetAccount :one
+SELECT * FROM accounts WHERE provider = $1 AND provider_id = $2;
+
+-- name: GetUserForAccount :one
+SELECT u.*
+FROM accounts a
+INNER JOIN users u ON u.id = a.user_id
+WHERE a.provider = $1
+AND a.provider_id = $2;
+
+
+--- internal/database/queries/search.sql ---
+
+-- name: SaveSearchConfig :one
+INSERT INTO search_configs (label, description, attach_csv, mail_to, mail_subject, teams_webhook, user_id)
+VALUES ($1, $2, $3, $4, $5, $6, $7)
+RETURNING *;
+
+-- name: GetSearchConfig :one
+SELECT * FROM search_configs WHERE id = $1;
+
+-- name: ListUserSearchConfigs :many
+SELECT * FROM search_configs WHERE user_id = $1;
+
+-- name: ListSearchConfigs :many
+SELECT * FROM search_configs WHERE active = TRUE;
+
+-- name: UpdateSearchConfig :one
+UPDATE search_configs SET
+    label = $2,
+    mail_to = $3,
+    teams_webhook = $4,
+    attach_csv = $5,
+    mail_subject = $6,
+    updated_at = CURRENT_TIMESTAMP,
+    active = $7,
+    description = $8
+WHERE id = $1
+RETURNING *;
+
+-- name: DeleteSearchConfig :exec
+DELETE FROM search_configs WHERE id = $1;
+
+-- name: SaveSearchTerm :one
+INSERT INTO search_terms (term, exact, search_config_id)
+VALUES ($1, $2, $3)
+RETURNING *;
+
+-- name: ListSearchTerms :many
+SELECT * FROM search_terms WHERE search_config_id = $1;
+
+-- name: DeleteSearchTerms :exec
+DELETE FROM search_terms WHERE search_config_id = $1;
+
+
+--- internal/database/queries/sessions.sql ---
+
+-- name: SaveSession :one
+INSERT INTO sessions (token_hash, user_id, user_agent, ip_address, expires_at)
+VALUES ($1, $2, $3, $4, $5)
+RETURNING *;
+
+-- name: GetActiveSession :one
+SELECT * 
+FROM sessions
+WHERE token_hash = $1
+AND expires_at > CURRENT_TIMESTAMP;
+
+-- name: DeleteSession :exec
+DELETE FROM sessions WHERE id = $1;
+
+
+--- internal/database/queries/tokens.sql ---
+
+-- name: SaveToken :exec
+INSERT INTO tokens (hash, scope, target, user_id, used_at, expires_at)
+VALUES ($1, $2, $3, $4, $5, $6);
+
+-- name: HasUnusedTokens :one
+SELECT COUNT(*) > 0
+FROM tokens
+WHERE user_id = $1
+AND scope = $2
+AND used_at IS NULL
+AND created_at >= NOW() - INTERVAL '1 hour';
+
+-- name: GetValidToken :one
+SELECT *
+FROM tokens
+WHERE hash = $1
+AND scope = $2
+AND used_at IS NULL
+AND expires_at > CURRENT_TIMESTAMP;
+
+-- name: UpdateToken :exec
+UPDATE tokens SET
+    used_at = CURRENT_TIMESTAMP
+WHERE hash = $1;
+
+
+--- internal/database/queries/users.sql ---
+
+-- name: SaveUser :one
+INSERT INTO users (email, email_verified_at, password_hash)
+VALUES ($1, $2, $3)
+RETURNING *;
+
+-- name: GetUser :one
+SELECT * FROM users WHERE id = $1;
+
+
+--- internal/iof/client.go ---
+
+package iof
+
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+	"strconv"
+	"time"
+)
+
+const (
+	BaseURL = "https://www.jornalminasgerais.mg.gov.br/api/beta"
+)
+
+var (
+	ErrNotFound = errors.New("iof: not found")
+)
+
+type Config struct {
+	Username string `env:"IOF_USERNAME,notEmpty"`
+	Password string `env:"IOF_PASSWORD,notEmpty" json:"-"`
+}
+
+type Client struct {
+	username string
+	password string
+	http     *http.Client
+}
+
+func NewClient(cfg Config) *Client {
+	return &Client{
+		username: cfg.Username,
+		password: cfg.Password,
+		http:     http.DefaultClient,
+	}
+}
+
+type Date struct {
+	time.Time
+}
+
+func (d *Date) UnmarshalJSON(data []byte) error {
+	var rawDate string
+	err := json.Unmarshal(data, &rawDate)
+	if err != nil {
+		return err
+	}
+
+	t, err := time.ParseInLocation("2006-01-02T15:04:05", rawDate, time.Local)
+	if err != nil {
+		err2 := json.Unmarshal([]byte(rawDate), &t)
+		if err2 != nil {
+			return err2
+		} else {
+			return err
+		}
+	}
+
+	d.Time = t
+	return nil
+}
+
+func (d *Date) MarshalJSON() ([]byte, error) {
+	return json.Marshal(d.Time.Format("2006-01-02T15:04:05"))
+}
+
+type Pagina struct {
+	Titulo         string `json:"titulo"`
+	NumPagina      int    `json:"pagina"`
+	Descricao      string `json:"descricao"`
+	Conteudo       string `json:"conteudo"`
+	DataPublicacao Date   `json:"dataPublicacao"`
+}
+
+func PaginaURL(date time.Time, pageNum int) string {
+	q := make(url.Values)
+	q.Set("dataJornal", date.Format(time.DateOnly))
+	q.Set("pagina", strconv.Itoa(pageNum))
+	return fmt.Sprintf("https://www.jornalminasgerais.mg.gov.br/index.php?%s", q.Encode())
+}
+
+func (c *Client) newRequest(ctx context.Context, method, url string, body io.Reader) (*http.Request, error) {
+	req, err := http.NewRequestWithContext(ctx, method, url, body)
+	if err != nil {
+		return nil, err
+	}
+	req.SetBasicAuth(c.username, c.password)
+	return req, nil
+}
+
+func (c *Client) GetLatest(ctx context.Context) ([]Pagina, error) {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	req, err := c.newRequest(ctx, http.MethodGet, BaseURL+"/jornal", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := c.http.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	switch res.StatusCode {
+	case http.StatusOK:
+		var paginas []Pagina
+		err := json.NewDecoder(res.Body).Decode(&paginas)
+		if err != nil {
+			return nil, err
+		}
+		if len(paginas) == 0 {
+			return nil, ErrNotFound
+		}
+		return paginas, nil
+	default:
+		return nil, fmt.Errorf("request failed with status %d", res.StatusCode)
+	}
+}
+
+func (c *Client) GetByDate(ctx context.Context, date time.Time) ([]Pagina, error) {
+	q := make(url.Values)
+	q.Add("data", fmt.Sprintf("%02d%02d%d", date.Day(), date.Month(), date.Year()))
+
+	req, err := c.newRequest(ctx, http.MethodGet, BaseURL+"/jornal?"+q.Encode(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	res, err := c.http.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	switch res.StatusCode {
+	case http.StatusOK:
+		var paginas []Pagina
+		err := json.NewDecoder(res.Body).Decode(&paginas)
+		if err != nil {
+			return nil, err
+		}
+		if len(paginas) == 0 {
+			return nil, ErrNotFound
+		}
+		return paginas, nil
+	default:
+		return nil, fmt.Errorf("request failed with status %d", res.StatusCode)
+	}
+}
+
+
+--- internal/iof/download.go ---
+
+package iof
+
+import (
+	"fmt"
+	"io"
+	"net/http"
+	"time"
+
+	"rodomg.automatiza.planejamento.mg.gov.br/internal/pdf"
+)
+
+func Download(date time.Time) ([]byte, error) {
+	url := fmt.Sprintf(
+		"https://www.jornalminasgerais.mg.gov.br/modulos/www.jornalminasgerais.mg.gov.br//diarioOficial/%s/jornal/caderno1_%s.pdf",
+		date.Format("2006/01/02"),
+		date.Format("2006-01-02"),
+	)
+
+	res, err := http.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	switch res.StatusCode {
+	case http.StatusOK:
+		b, err := io.ReadAll(res.Body)
+		if err != nil {
+			return nil, err
+		}
+		return b, nil
+	case http.StatusNotFound:
+		return nil, ErrNotFound
+	default:
+		return nil, fmt.Errorf("failed with unexpected status: %d", res.StatusCode)
+	}
+
+}
+
+func DownloadPages(date time.Time) ([]Pagina, []byte, error) {
+	b, err := Download(date)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	doc, err := pdf.ExtractPages(b)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to extract pages: %w", err)
+	}
+
+	pages := make([]Pagina, 0, len(doc))
+	for _, docPage := range doc {
+		pages = append(pages, Pagina{
+			NumPagina: docPage.Number,
+			Conteudo:  docPage.Content,
+			DataPublicacao: Date{
+				Time: date,
+			},
+		})
+	}
+	return pages, b, nil
+}
+
+
+--- internal/iof/v1/consulta.go ---
+
+package v1
+
+import (
+	"encoding/base64"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"net/url"
+	"time"
+
+	"rodomg.automatiza.planejamento.mg.gov.br/internal/iof"
+	"rodomg.automatiza.planejamento.mg.gov.br/internal/pdf"
+)
+
+type Response struct {
+	Dados Dados `json:"dados"`
+}
+
+type Dados struct {
+	DataPublicacao          string                  `json:"dataPublicacao"`
+	Cadernos                []Caderno               `json:"cadernos"`
+	ArquivoCadernoPrincipal ArquivoCadernoPrincipal `json:"arquivoCadernoPrincipal"`
+}
+
+type ArquivoCadernoPrincipal struct {
+	// O PDF completo em Base64
+	Arquivo          string `json:"arquivo"`
+	ArquivoUnico     bool   `json:"arquivoUnico"`
+	Pagina           int    `json:"pagina"`
+	TotalPaginas     int    `json:"totalPaginas"`
+	DescricaoCaderno string `json:"descricaoCaderno"`
+}
+
+type Caderno struct {
+	ID        int     `json:"id"`
+	Descricao string  `json:"descricao"`
+	Ordem     int     `json:"ordem"`
+	Secoes    []Secao `json:"secoes"`
+}
+
+type Secao struct {
+	Descricao     string `json:"descricao"`
+	PaginaInicial int    `json:"paginaInicial"`
+}
+
+func ConsultaPorData(date time.Time) (*Response, error) {
+	q := make(url.Values)
+	q.Set("dataPublicacao", date.Format(time.DateOnly))
+	res, err := http.Get("https://www.jornalminasgerais.mg.gov.br/api/v1/Jornal/ObterEdicaoPorDataPublicacao?" + q.Encode())
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+
+	switch res.StatusCode {
+	case http.StatusOK:
+		var resp Response
+		err := json.NewDecoder(res.Body).Decode(&resp)
+		if err != nil {
+			return nil, err
+		}
+		return &resp, nil
+	case http.StatusUnauthorized:
+		return nil, iof.ErrNotFound
+	default:
+		return nil, fmt.Errorf("unexpected status: %d", res.StatusCode)
+	}
+}
+
+func ConvertPages(arquivo string, date time.Time) ([]iof.Pagina, error) {
+	b, err := base64.StdEncoding.DecodeString(arquivo)
+	if err != nil {
+		return nil, err
+	}
+
+	pdfPages, err := pdf.ExtractPages(b)
+	if err != nil {
+		return nil, err
+	}
+
+	pages := make([]iof.Pagina, 0, len(pdfPages))
+	for _, pdfPage := range pdfPages {
+		pages = append(pages, iof.Pagina{
+			NumPagina: pdfPage.Number,
+			Conteudo:  pdfPage.Content,
+			DataPublicacao: iof.Date{
+				Time: date,
+			},
+		})
+	}
+	return pages, nil
+}
+
+
+--- internal/mailer/mailer.go ---
+
+package mailer
+
+import (
+	"context"
+
+	"github.com/wneessen/go-mail"
+)
+
+type Config struct {
+	FromAddress string `env:"MAIL_FROM_ADDRESS,notEmpty"`
+	User        string `env:"MAIL_SMTP_USER"`
+	Password    string `env:"MAIL_SMTP_PASSWORD" json:"-"`
+	Host        string `env:"MAIL_SMTP_HOST,notEmpty"`
+	Port        int    `env:"MAIL_SMTP_PORT,notEmpty"`
+}
+
+type Mailer struct {
+	fromAddress string
+	client      *mail.Client
+}
+
+func New(cfg Config) (*Mailer, error) {
+	client, err := mail.NewClient(cfg.Host, mail.WithPort(cfg.Port))
+	if err != nil {
+		return nil, err
+	}
+	if cfg.User != "" && cfg.Password != "" {
+		client.SetSMTPAuth(mail.SMTPAuthPlain)
+		client.SetUsername(cfg.User)
+		client.SetPassword(cfg.Password)
+	}
+	if cfg.Port == 1025 { // Locally running
+		client.SetTLSPolicy(mail.NoTLS)
+	}
+
+	return &Mailer{
+		fromAddress: cfg.FromAddress,
+		client:      client,
+	}, nil
+}
+
+type Email struct {
+	To      []string
+	Subject string
+	Text    string
+	HTML    string
+}
+
+func (m *Mailer) Send(ctx context.Context, emails ...Email) error {
+	msgs := make([]*mail.Msg, 0, len(emails))
+	for _, email := range emails {
+		msg := mail.NewMsg()
+		msg.Subject(email.Subject)
+		err := msg.From(m.fromAddress)
+		if err != nil {
+			return err
+		}
+		err = msg.To(email.To...)
+		if err != nil {
+			return err
+		}
+		if email.HTML != "" {
+			msg.SetBodyString(mail.TypeTextHTML, email.HTML)
+		}
+		if email.Text != "" {
+			msg.SetBodyString(mail.TypeTextPlain, email.Text)
+		}
+		msgs = append(msgs, msg)
+	}
+
+	return m.client.DialAndSend(msgs...)
+}
+
+
+--- internal/mailer/notification.go ---
+
+package mailer
+
+import (
+	"bytes"
+	_ "embed"
+	"html/template"
+
+	"rodomg.automatiza.planejamento.mg.gov.br/internal/auth"
+	"rodomg.automatiza.planejamento.mg.gov.br/internal/search"
+)
+
+var (
+	//go:embed templates/notification.tmpl
+	notificationTmpl string
+)
+
+func NotificationEmail(user *auth.User, report *search.Report) (*Email, error) {
+	tmpl, err := template.New("").Parse(notificationTmpl)
+	if err != nil {
+		return nil, err
+	}
+
+	textBuf := new(bytes.Buffer)
+	if err := tmpl.ExecuteTemplate(textBuf, "text", report); err != nil {
+		return nil, err
+	}
+
+	email := &Email{
+		Subject: "Novas notificações - Diário Oficial",
+		Text:    textBuf.String(),
+		To:      []string{user.Email},
+	}
+	return email, nil
+}
+
+
+--- internal/mailer/templates/notification.tmpl ---
+
+{{define "text"}}
+  Foram encontradas {{.Count}} novas notificações para o Diário Oficial do dia {{.PublishDate}} para os termos:
+  {{range .SearchTerms}}- {{.Term}}{{end}}
+
+  Os trechos destacados são:
+  {{range .Highlights}}
+  - {{.Content}}
+  {{end}}
+{{end}}
+
+
+--- internal/pdf/text.go ---
+
+package pdf
+
+import (
+	"errors"
+	"fmt"
+	"os"
+	"os/exec"
+	"strconv"
+	"strings"
+)
+
+const (
+	pdfInfo     = "pdfinfo"
+	pdfToText   = "pdftotext"
+	pagesPrefix = "Pages:"
+)
+
+type Page struct {
+	Number  int
+	Content string
+}
+
+func ExtractPagesFromPath(path string) ([]Page, error) {
+	cmd := exec.Command(pdfInfo, path)
+	output, err := cmd.Output()
+	if err != nil {
+		var exitErr *exec.ExitError
+		if errors.As(err, &exitErr) {
+			return nil, fmt.Errorf("%s failed (%s): %w", pdfInfo, exitErr.Stderr, exitErr)
+		}
+		return nil, fmt.Errorf("failed to extract pages from path: %w", err)
+	}
+
+	var numPages int
+	for line := range strings.SplitSeq(string(output), "\n") {
+		if strings.HasPrefix(line, pagesPrefix) {
+			fields := strings.Fields(line)
+			if len(fields) == 2 {
+				numPages, err = strconv.Atoi(fields[1])
+				if err != nil {
+					return nil, err
+				}
+			}
+			break
+		}
+	}
+	if numPages == 0 {
+		return nil, fmt.Errorf("failed to get number of pages from pdf")
+	}
+
+	pages := make([]Page, 0)
+	for num := range numPages {
+		cmd := exec.Command(pdfToText, "-f", strconv.Itoa(num+1), "-l", strconv.Itoa(num+1), path, "-")
+		output, err := cmd.Output()
+		if err != nil {
+			return nil, fmt.Errorf("failed to extract pages: %w", err)
+		}
+
+		pages = append(pages, Page{
+			Number:  num + 1,
+			Content: string(output),
+		})
+	}
+
+	return pages, nil
+}
+
+func ExtractPages(b []byte) ([]Page, error) {
+	tmp, err := os.CreateTemp("", "*.pdf")
+	if err != nil {
+		return nil, err
+	}
+	defer os.Remove(tmp.Name())
+
+	_, err = tmp.Write(b)
+	if err != nil {
+		tmp.Close()
+		return nil, err
+	}
+
+	if err := tmp.Close(); err != nil {
+		return nil, err
+	}
+
+	pages, err := ExtractPagesFromPath(tmp.Name())
+	if err != nil {
+		return nil, err
+	}
+	return pages, nil
+}
+
+
+--- internal/search/config.go ---
+
+package search
+
+import (
+	"context"
+	"errors"
+
+	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
+	"rodomg.automatiza.planejamento.mg.gov.br/internal/database"
+)
+
+var (
+	ErrConfigNotFound = errors.New("search config not found")
+)
+
+type Term struct {
+	Term  string `json:"term"`
+	Exact bool   `json:"exact"`
+}
+
+type Config struct {
+	ID           int64     `json:"id"`
+	Label        string    `json:"label"`
+	Description  string    `json:"description"`
+	Active       bool      `json:"active"`
+	AttachCSV    bool      `json:"attach_csv"`
+	MailTo       []string  `json:"mail_to,omitempty"`
+	MailSubject  string    `json:"mail_subject,omitempty"`
+	TeamsWebhook string    `json:"teams_webhook,omitempty"`
+	Terms        []*Term   `json:"terms"`
+	UserID       uuid.UUID `json:"-"`
+}
+
+func (c Config) MailEnabled() bool {
+	return len(c.MailTo) > 0
+}
+
+func (c Config) TeamsEnabled() bool {
+	return c.TeamsWebhook != ""
+}
+
+func mapConfig(record database.SearchConfig, termRecords []database.SearchTerm) *Config {
+	terms := make([]*Term, 0, len(termRecords))
+	for _, termRecord := range termRecords {
+		terms = append(terms, &Term{
+			Term:  termRecord.Term,
+			Exact: termRecord.Exact,
+		})
+	}
+
+	return &Config{
+		ID:           record.ID,
+		Label:        record.Label,
+		Description:  record.Description,
+		Active:       record.Active,
+		AttachCSV:    record.AttachCsv,
+		TeamsWebhook: record.TeamsWebhook,
+		MailTo:       record.MailTo,
+		MailSubject:  record.MailSubject,
+		UserID:       record.UserID,
+		Terms:        terms,
+	}
+}
+
+func (s *Service) SaveConfig(ctx context.Context, cfg *Config) error {
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	q := s.store.WithTx(tx)
+
+	record, err := q.SaveSearchConfig(ctx, database.SaveSearchConfigParams{
+		Label:        cfg.Label,
+		Description:  cfg.Description,
+		AttachCsv:    cfg.AttachCSV,
+		MailTo:       cfg.MailTo,
+		MailSubject:  cfg.MailSubject,
+		TeamsWebhook: cfg.TeamsWebhook,
+		UserID:       cfg.UserID,
+	})
+	if err != nil {
+		return err
+	}
+	cfg.ID = record.ID
+
+	for _, term := range cfg.Terms {
+		_, err := q.SaveSearchTerm(ctx, database.SaveSearchTermParams{
+			Term:           term.Term,
+			Exact:          term.Exact,
+			SearchConfigID: record.ID,
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit(ctx)
+}
+
+func (s *Service) GetConfig(ctx context.Context, id int64) (*Config, error) {
+	record, err := s.store.GetSearchConfig(ctx, id)
+	if err != nil {
+		switch {
+		case errors.Is(err, pgx.ErrNoRows):
+			return nil, ErrConfigNotFound
+		default:
+			return nil, err
+		}
+	}
+
+	termRecords, err := s.store.ListSearchTerms(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return mapConfig(record, termRecords), nil
+}
+
+func (s *Service) ListUserConfigs(ctx context.Context, userID uuid.UUID) ([]*Config, error) {
+	records, err := s.store.ListUserSearchConfigs(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	out := make([]*Config, 0, len(records))
+	for _, record := range records {
+		termRecords, err := s.store.ListSearchTerms(ctx, record.ID)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, mapConfig(record, termRecords))
+	}
+	return out, nil
+}
+
+// Returns a list of all active configs.
+func (s *Service) ListConfigs(ctx context.Context) ([]*Config, error) {
+	records, err := s.store.ListSearchConfigs(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	out := make([]*Config, 0, len(records))
+	for _, record := range records {
+		termRecords, err := s.store.ListSearchTerms(ctx, record.ID)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, mapConfig(record, termRecords))
+	}
+	return out, nil
+}
+
+func (s *Service) UpdateConfig(ctx context.Context, cfg *Config) error {
+	tx, err := s.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	q := s.store.WithTx(tx)
+
+	_, err = q.UpdateSearchConfig(ctx, database.UpdateSearchConfigParams{
+		ID:           cfg.ID,
+		Label:        cfg.Label,
+		Description:  cfg.Description,
+		Active:       cfg.Active,
+		AttachCsv:    cfg.AttachCSV,
+		MailTo:       cfg.MailTo,
+		MailSubject:  cfg.MailSubject,
+		TeamsWebhook: cfg.TeamsWebhook,
+	})
+	if err != nil {
+		return err
+	}
+
+	err = q.DeleteSearchTerms(ctx, cfg.ID)
+	if err != nil {
+		return err
+	}
+
+	for _, term := range cfg.Terms {
+		_, err = q.SaveSearchTerm(ctx, database.SaveSearchTermParams{
+			Term:           term.Term,
+			Exact:          term.Exact,
+			SearchConfigID: cfg.ID,
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit(ctx)
+}
+
+func (s *Service) DeleteConfig(ctx context.Context, id int64) error {
+	return s.store.DeleteSearchConfig(ctx, id)
+}
+
+
+--- internal/search/context.go ---
+
+package search
+
+import "context"
+
+const (
+	configKey contextKey = iota
+)
+
+type contextKey int
+
+func WithConfig(ctx context.Context, cfg *Config) context.Context {
+	return context.WithValue(ctx, configKey, cfg)
+}
+
+func ConfigFromContext(ctx context.Context) *Config {
+	cfg, ok := ctx.Value(configKey).(*Config)
+	if !ok {
+		panic("config not present in context")
+	}
+	return cfg
+}
+
+
+--- internal/search/report.go ---
+
+package search
+
+import "time"
+
+type Trigger string
+
+const (
+	TriggerBacktest Trigger = "backtest"
+	TriggerCron     Trigger = "cron"
+)
+
+type Highlight struct {
+	Page    int    `json:"page"`
+	Content string `json:"content"`
+	Term    string `json:"term"`
+	PageURL string `json:"page_url"`
+}
+
+type Report struct {
+	PublishDate time.Time    `json:"publish_date"`
+	Highlights  []*Highlight `json:"highlights"`
+	SearchTerms []*Term      `json:"terms"`
+	Trigger     Trigger      `json:"trigger"`
+	Count       int          `json:"count"`
+}
+
+
+--- internal/search/schema/sqlite.sql ---
+
+CREATE TABLE IF NOT EXISTS documentos (
+    id INTEGER PRIMARY KEY,
+    titulo TEXT NOT NULL,
+    num_pagina INTEGER NOT NULL,
+    descricao TEXT NOT NULL,
+    conteudo TEXT NOT NULL,
+    data_publicacao TIMESTAMP NOT NULL
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_documentos_data_publicacao_num_pagina ON documentos(data_publicacao, num_pagina);
+
+CREATE VIRTUAL TABLE IF NOT EXISTS documentos_fts USING fts5(
+    conteudo,
+    content='documentos',
+    content_rowid='id'
+);
+
+CREATE TRIGGER IF NOT EXISTS documentos_ai AFTER INSERT ON documentos BEGIN
+  INSERT INTO documentos_fts(rowid, conteudo)
+  VALUES (new.id, new.conteudo);
+END;
+
+CREATE TRIGGER IF NOT EXISTS documentos_ad AFTER DELETE ON documentos BEGIN
+  INSERT INTO documentos_fts(documentos_fts, rowid) VALUES('delete', old.id);
+END;
+
+CREATE TRIGGER IF NOT EXISTS documentos_au AFTER UPDATE ON documentos BEGIN
+  INSERT INTO documentos_fts(documentos_fts, rowid) VALUES('delete', old.id);
+  INSERT INTO documentos_fts(rowid, conteudo)
+  VALUES (new.id, new.conteudo);
+END;
+
+
+--- internal/search/search.go ---
+
+package search
+
+import (
+	"github.com/jackc/pgx/v5/pgxpool"
+	"rodomg.automatiza.planejamento.mg.gov.br/internal/database"
+)
+
+type Service struct {
+	pool  *pgxpool.Pool
+	store *database.Queries
+}
+
+func New(pool *pgxpool.Pool) *Service {
+	return &Service{
+		pool:  pool,
+		store: database.New(pool),
+	}
+}
+
+
+--- internal/search/source.go ---
+
+package search
+
+import (
+	"database/sql"
+	"net/url"
+	"strconv"
+	"time"
+
+	_ "embed"
+
+	_ "modernc.org/sqlite"
+	"rodomg.automatiza.planejamento.mg.gov.br/internal/iof"
+)
+
+//go:embed schema/sqlite.sql
+var schema string
+
+type Source struct {
+	db *sql.DB
+}
+
+func NewSource(dbPath string) (*Source, error) {
+	q := make(url.Values)
+	q.Add("_pragma", "busy_timeout(5000)")
+	q.Add("_pragma", "journal_mode(WAL)")
+	q.Add("_pragma", "synchronous(NORMAL)")
+	q.Add("_pragma", "foreign_keys(ON)")
+
+	db, err := sql.Open("sqlite", dbPath+"?"+q.Encode())
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = db.Exec(schema)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Source{
+		db: db,
+	}, nil
+}
+
+func (s *Source) Import(pages []iof.Pagina) error {
+	tx, err := s.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	query := `
+	REPLACE INTO documentos (titulo, num_pagina, descricao, conteudo, data_publicacao)
+	VALUES ($1, $2, $3, $4, $5)`
+	for _, page := range pages {
+		args := []any{
+			page.Titulo,
+			page.NumPagina,
+			page.Descricao,
+			page.Conteudo,
+			page.DataPublicacao.Format(time.DateOnly),
+		}
+		_, err := tx.Exec(query, args...)
+		if err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit()
+}
+
+func (s *Source) Lookup(trigger Trigger, publishDate time.Time, terms []*Term) (*Report, error) {
+	highlights := make([]*Highlight, 0)
+	for _, term := range terms {
+		query := `
+		SELECT
+			doc.num_pagina,
+			snippet(documentos_fts, 0, '<b>', '</b>', '...', 32) AS trecho
+		FROM documentos_fts doc_fts
+		INNER JOIN documentos doc ON doc_fts.rowid = doc.id 
+		WHERE doc.data_publicacao = ?
+		AND documentos_fts MATCH ?`
+		content := term.Term
+		if term.Exact {
+			content = strconv.Quote(content)
+		}
+
+		args := []any{publishDate.Format(time.DateOnly), content}
+
+		rows, err := s.db.Query(query, args...)
+		if err != nil {
+			return nil, err
+		}
+		defer rows.Close()
+
+		for rows.Next() {
+			highlight := &Highlight{
+				Term: content,
+			}
+			err = rows.Scan(&highlight.Page, &highlight.Content)
+			if err != nil {
+				return nil, err
+			}
+
+			highlight.PageURL = iof.PaginaURL(publishDate, highlight.Page)
+			highlights = append(highlights, highlight)
+		}
+
+		if err := rows.Err(); err != nil {
+			return nil, err
+		}
+	}
+
+	return &Report{
+		PublishDate: publishDate,
+		Highlights:  highlights,
+		Count:       len(highlights),
+		SearchTerms: terms,
+		Trigger:     trigger,
+	}, nil
+}
+
+func (s *Source) HasPages(publishDate time.Time) (bool, error) {
+	query := `SELECT COUNT(*) FROM documentos WHERE data_publicacao = $1`
+
+	var count int
+	err := s.db.QueryRow(query, publishDate.Format(time.DateOnly)).Scan(&count)
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
+
+--- internal/tasks/daily_gazette.go ---
+
+package tasks
+
+import (
+	"context"
+	"errors"
+	"log/slog"
+	"time"
+
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/riverqueue/river"
+	"rodomg.automatiza.planejamento.mg.gov.br/internal/database"
+	"rodomg.automatiza.planejamento.mg.gov.br/internal/iof"
+	iofv1 "rodomg.automatiza.planejamento.mg.gov.br/internal/iof/v1"
+	"rodomg.automatiza.planejamento.mg.gov.br/internal/search"
+)
+
+type DailyGazetteArgs struct {
+	Date time.Time
+}
+
+func (n DailyGazetteArgs) Kind() string { return "daily:gazette" }
+
+type DailyGazetteWorker struct {
+	search *search.Service
+	source *search.Source
+	store  *database.Queries
+	pool   *pgxpool.Pool
+	logger *slog.Logger
+
+	river.Worker[DailyGazetteArgs]
+}
+
+func NewDailyGazetteWorker(source *search.Source, pool *pgxpool.Pool, logger *slog.Logger) *DailyGazetteWorker {
+	return &DailyGazetteWorker{
+		search: search.New(pool),
+		store:  database.New(pool),
+		source: source,
+		pool:   pool,
+		logger: logger,
+	}
+}
+
+func (w *DailyGazetteWorker) Work(ctx context.Context, job *river.Job[DailyGazetteArgs]) error {
+	logger := w.logger.With(slog.String("name", job.Kind), slog.String("date", job.Args.Date.Format(time.DateOnly)))
+
+	logger.Info("starting daily:gazette job")
+
+	res, err := iofv1.ConsultaPorData(job.Args.Date)
+	if err != nil {
+		switch {
+		case errors.Is(err, iof.ErrNotFound):
+			logger.Info("no gazette found for the day, skipping")
+			return nil
+		default:
+			return err
+		}
+	}
+
+	pages, err := iofv1.ConvertPages(res.Dados.ArquivoCadernoPrincipal.Arquivo, job.Args.Date)
+	if err != nil {
+		return err
+	}
+
+	logger.Info("importing pages", slog.Int("page_count", len(pages)))
+	err = w.source.Import(pages)
+	if err != nil {
+		return err
+	}
+
+	logger.Info("listing active search configs")
+	searchConfigs, err := w.search.ListConfigs(ctx)
+	if err != nil {
+		return err
+	}
+
+	tx, err := w.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	logger.Info("creating jobs for search configs", slog.Int("total", len(searchConfigs)))
+	for _, config := range searchConfigs {
+		client := river.ClientFromContext[pgx.Tx](ctx)
+		_, err = client.InsertTx(ctx, tx, NotifyArgs{Date: job.Args.Date, SearchConfig: config, Source: w.source}, nil)
+		if err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit(ctx)
+}
+
+
+--- internal/tasks/notify.go ---
+
+package tasks
+
+import (
+	"context"
+	"log/slog"
+	"time"
+
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/riverqueue/river"
+	"rodomg.automatiza.planejamento.mg.gov.br/internal/search"
+	"rodomg.automatiza.planejamento.mg.gov.br/internal/teams"
+)
+
+type NotifyArgs struct {
+	Date         time.Time
+	SearchConfig *search.Config
+	Source       *search.Source
+}
+
+func (n NotifyArgs) Kind() string { return "notify" }
+
+type NotifyWorker struct {
+	pool   *pgxpool.Pool
+	logger *slog.Logger
+
+	river.Worker[NotifyArgs]
+}
+
+func NewNotifyWorker(logger *slog.Logger, pool *pgxpool.Pool) *NotifyWorker {
+	return &NotifyWorker{
+		logger: logger,
+		pool:   pool,
+	}
+}
+
+func (w *NotifyWorker) Work(ctx context.Context, job *river.Job[NotifyArgs]) error {
+	searchConfig := job.Args.SearchConfig
+
+	logger := w.logger.With(slog.String("name", "notify"), slog.Int64("search_config_id", searchConfig.ID))
+
+	logger.Info("generating report for search config")
+	report, err := job.Args.Source.Lookup(search.TriggerCron, job.Args.Date, searchConfig.Terms)
+	if err != nil {
+		return err
+	}
+
+	// No matches
+	if len(report.Highlights) == 0 {
+		logger.Info("no matches found, skipping")
+		return nil
+	}
+
+	// Notify Teams Webhook
+	tx, err := w.pool.Begin(ctx)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback(ctx)
+
+	client := river.ClientFromContext[pgx.Tx](ctx)
+
+	// Teams is configured
+	if searchConfig.TeamsWebhook != "" {
+		_, err = client.InsertTx(ctx, tx, NotifyTeamsArgs{Report: report, WebhookURL: searchConfig.TeamsWebhook}, nil)
+		if err != nil {
+			return err
+		}
+	}
+
+	// Email is configured
+	if len(searchConfig.MailTo) > 0 {
+		// TODO: Create email job
+	}
+
+	return tx.Commit(ctx)
+}
+
+type NotifyTeamsArgs struct {
+	Report     *search.Report
+	WebhookURL string
+}
+
+func (n NotifyTeamsArgs) Kind() string { return "notify:teams" }
+
+type NotifyTeamsWorker struct {
+	river.Worker[NotifyTeamsArgs]
+}
+
+func (w *NotifyTeamsWorker) Work(ctx context.Context, job *river.Job[NotifyTeamsArgs]) error {
+	return teams.SendReport(ctx, job.Args.WebhookURL, job.Args.Report)
+}
+
+func NewNotifyTeamsWorker() *NotifyTeamsWorker {
+	return &NotifyTeamsWorker{}
+}
+
+
+--- internal/teams/notify.go ---
+
+// https://learn.microsoft.com/en-us/connectors/teams/?tabs=text1%2Cdotnet#microsoft-teams-webhook
+// https://adaptivecards.microsoft.com/
+// https://adaptivecards.microsoft.com/designer
+package teams
+
+import (
+	"context"
+	"fmt"
+
+	"rodomg.automatiza.planejamento.mg.gov.br/internal/search"
+)
+
+type Request struct {
+	Type        string                   `json:"type"`
+	Attachments []AdaptiveCardItemSchema `json:"attachments"`
+}
+
+type AdaptiveCardItemSchema struct {
+	ContentType string       `json:"contentType"`
+	ContentURL  *string      `json:"contentUrl"`
+	Content     AdaptiveCard `json:"content"`
+}
+
+type AdaptiveCard struct {
+	Schema  string `json:"$schema"`
+	Type    string `json:"type"`
+	Version string `json:"version"`
+	Body    []any  `json:"body"`
+}
+
+type TextBlock struct {
+	Type   string `json:"type"`
+	Wrap   bool   `json:"wrap,omitempty"`
+	Text   string `json:"text"`
+	Size   string `json:"size,omitempty"`
+	Weight string `json:"weight,omitempty"`
+}
+
+func NewTextBlock(text string) TextBlock {
+	return TextBlock{
+		Type: "TextBlock",
+		Text: text,
+	}
+}
+
+func SendReport(ctx context.Context, webhookURL string, report *search.Report) error {
+	return nil
+}
+
+func buildCard(report *search.Report) Request {
+	body := make([]any, 0)
+
+	body = append(body, TextBlock{
+		Type:   "TextBlock",
+		Text:   fmt.Sprintf("Publicações do Diário Oficial - %s", report.PublishDate.Format("02/01/2006")),
+		Size:   "Large",
+		Weight: "Bolder",
+	})
+
+	for _, highlight := range report.Highlights {
+		body = append(body, TextBlock{
+			Type: "TextBlock",
+			Wrap: true,
+			Text: highlight.Content,
+		})
+	}
+
+	return Request{
+		Type: "message",
+		Attachments: []AdaptiveCardItemSchema{
+			{
+				ContentType: "application/vnd.microsoft.card.adaptive",
+				ContentURL:  nil,
+				Content: AdaptiveCard{
+					Schema:  "http://adaptivecards.io/schemas/adaptive-card.json",
+					Type:    "AdaptiveCard",
+					Version: "1.2",
+					Body:    body,
+				},
+			},
+		},
+	}
+}
+
+/**
+{
+    "type": "AdaptiveCard",
+    "version": "1.5",
+    "body": [
+        {
+            "type": "TextBlock",
+            "text": "Publicações do Diário Oficial - 02/09/2025",
+            "size": "Large",
+            "weight": "Bolder"
+        },
+
+
+        {
+            "type": "Container",
+            "showBorder": true,
+            "items": [
+        {
+            "type": "TextBlock",
+            "wrap": true,
+            "text": "_foo_",
+            "weight": "Lighter"
+        }
+            ]
+        },
+                {
+            "type": "TextBlock",
+            "wrap": true,
+            "text": "[Página 12](https://)"
+        }
+    ],
+    "$schema": "https://adaptivecards.io/schemas/adaptive-card.json"
+}
+*/
+
+
+--- migrations/20250806133158_auth.sql ---
+
+-- +goose Up
+-- +goose StatementBegin
+CREATE EXTENSION IF NOT EXISTS "citext";
+
+CREATE TABLE "users" (
+    "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    "email" CITEXT NOT NULL,
+    "email_verified_at" TIMESTAMPTZ,
+    "password_hash" TEXT,
+    "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE UNIQUE INDEX "users_email_idx" ON "users"("email");
+
+CREATE TABLE "accounts" (
+    "provider" TEXT NOT NULL,
+    "provider_id" TEXT NOT NULL,
+    "user_id" UUID NOT NULL REFERENCES "users"("id") ON DELETE CASCADE,
+    PRIMARY KEY ("provider", "provider_id")
+);
+CREATE INDEX "accounts_user_idx" ON "accounts"("user_id");
+
+CREATE TABLE "sessions" (
+    "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    "token_hash" BYTEA NOT NULL,
+    "user_id" UUID NOT NULL REFERENCES "users"("id") ON DELETE CASCADE,
+    "user_agent" TEXT NOT NULL,
+    "ip_address" TEXT NOT NULL,
+    "expires_at" TIMESTAMPTZ NOT NULL,
+    "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+-- +goose StatementEnd
+
+-- +goose Down
+-- +goose StatementBegin
+DROP TABLE "sessions";
+DROP TABLE "accounts";
+DROP TABLE "users";
+-- +goose StatementEnd
+
+
+--- migrations/20250807180105_search.sql ---
+
+-- +goose Up
+-- +goose StatementBegin
+CREATE TABLE "search_configs" (
+    "id" BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    "label" TEXT NOT NULL,
+    "attach_csv" BOOLEAN NOT NULL DEFAULT FALSE,
+    "mail_to" CITEXT[] NOT NULL DEFAULT '{}',
+    "teams_webhook" TEXT NOT NULL,
+    "user_id" UUID NOT NULL REFERENCES "users"("id") ON DELETE CASCADE,
+    "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX "search_configs_user_idx" ON "search_configs"("user_id");
+
+CREATE TABLE "search_terms" (
+    "id" BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    "term" TEXT NOT NULL,
+    "exact" BOOLEAN NOT NULL DEFAULT TRUE,
+    "search_config_id" BIGINT NOT NULL REFERENCES "search_configs"("id") ON DELETE CASCADE
+);
+CREATE INDEX "search_terms_config_idx" ON "search_terms"("search_config_id");
+-- +goose StatementEnd
+
+-- +goose Down
+-- +goose StatementBegin
+DROP TABLE "search_terms";
+DROP TABLE "search_configs";
+-- +goose StatementEnd
+
+
+--- migrations/20250812123103_add_mail_subject.sql ---
+
+-- +goose Up
+-- +goose StatementBegin
+ALTER TABLE "search_configs" ADD COLUMN "mail_subject" TEXT NOT NULL DEFAULT '';
+-- +goose StatementEnd
+
+-- +goose Down
+-- +goose StatementBegin
+ALTER TABLE "search_configs" DROP COLUMN "mail_subject";
+-- +goose StatementEnd
+
+
+--- migrations/20250819125426_add_active.sql ---
+
+-- +goose Up
+-- +goose StatementBegin
+ALTER TABLE "search_configs" ADD COLUMN "active" BOOLEAN NOT NULL DEFAULT TRUE;
+-- +goose StatementEnd
+
+-- +goose Down
+-- +goose StatementBegin
+ALTER TABLE "search_configs" DROP COLUMN "active";
+-- +goose StatementEnd
+
+
+--- migrations/20250827174303_tokens.sql ---
+
+-- +goose Up
+-- +goose StatementBegin
+CREATE TABLE "tokens" (
+    "hash" BYTEA PRIMARY KEY,
+    "scope" TEXT NOT NULL,
+    "target" TEXT,
+    "user_id" UUID NOT NULL REFERENCES "users"("id") ON DELETE CASCADE,
+    "used_at" TIMESTAMPTZ,
+    "expires_at" TIMESTAMPTZ NOT NULL DEFAULT (CURRENT_TIMESTAMP + INTERVAL '24 hours'),
+    "created_at" TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+-- +goose StatementEnd
+
+-- +goose Down
+-- +goose StatementBegin
+DROP TABLE "tokens";
+-- +goose StatementEnd
+
+
+--- migrations/20250917125026_add_search_config_description.sql ---
+
+-- +goose Up
+-- +goose StatementBegin
+ALTER TABLE "search_configs" ADD COLUMN "description" TEXT NOT NULL DEFAULT '';
+-- +goose StatementEnd
+
+-- +goose Down
+-- +goose StatementBegin
+ALTER TABLE "search_configs" DROP COLUMN "description";
+-- +goose StatementEnd
+
+
+--- migrations/migrations.go ---
+
+package migrations
+
+import (
+	"database/sql"
+	"embed"
+
+	"github.com/pressly/goose/v3"
+)
+
+//go:embed *.sql
+var migrationsFS embed.FS
+
+func Up(db *sql.DB) error {
+	goose.SetLogger(goose.NopLogger())
+	goose.SetBaseFS(migrationsFS)
+
+	err := goose.SetDialect("pgx")
+	if err != nil {
+		return err
+	}
+	return goose.Up(db, ".")
+}
+
+
+--- ui/src/components/search-config-form.tsx ---
+
+import { z } from "zod/v4";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "./ui/form";
+import {
+  FileSearchIcon,
+  MailIcon,
+  NotebookIcon,
+  PlusIcon,
+  XIcon,
+} from "lucide-react";
+import { Input } from "./ui/input";
+import { Button } from "./ui/button";
+import { Switch } from "./ui/switch";
+import { TeamsIcon } from "./teams-icon";
+import { useForm, useFieldArray } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  ApiError,
+  createSearchConfig,
+  type CreateSearchConfig,
+  type SearchTerm,
+} from "@/lib/api";
+import { useNavigate } from "react-router";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import React, { useRef, useState } from "react";
+import { toast } from "sonner";
+import { Textarea } from "./ui/textarea";
+
+export function extractEmails(value: string): string[] {
+  return value
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+}
+
+const schema = z.object({
+  label: z
+    .string()
+    .nonempty("Deve ser informado")
+    .max(255, "Deve possuir no máximo 255 caracteres"),
+  description: z.string().max(1000, "Deve possuir no máximo 1000 caracteres"),
+  mail_subject: z.string().max(255, "Deve possuir no máximo 255 caracteres"),
+  mail_to: z
+    .array(z.object({ email: z.email("Deve ser um email válido") }))
+    .optional(),
+  attach_csv: z.boolean().default(false).optional(),
+  teams_webhook: z.union([
+    z.literal(""),
+    z.url({
+      protocol: /^https$/,
+      hostname: z.regexes.domain,
+      error: "Deve ser uma URL válida",
+    }),
+  ]),
+});
+
+export type SearchConfigFormProps = {
+  onFormSubmit?: (values: CreateSearchConfig) => void;
+  defaultValues?: {
+    searchTerms?: SearchTerm[];
+    label?: string;
+    description?: string;
+    mail_subject?: string;
+    mail_to?: string[];
+    teams_webhook?: string;
+    attach_csv?: boolean;
+  };
+};
+
+export const SearchConfigForm: React.FC<SearchConfigFormProps> = ({
+  onFormSubmit,
+  defaultValues,
+}) => {
+  const [term, setTerm] = useState("");
+  const [searchTerms, setSearchTerms] = useState<SearchTerm[]>(
+    defaultValues?.searchTerms || []
+  );
+  const canAddTerms = searchTerms.length < 5; // Max 5
+
+  const termInputRef = useRef<HTMLInputElement>(null);
+
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  const mutation = useMutation({
+    mutationFn: createSearchConfig,
+    onSuccess: () => {
+      queryClient.invalidateQueries();
+      toast.success("Configuração criada", {
+        description: "Sua configuração de notificações foi criada com sucesso.",
+      });
+      navigate("/");
+    },
+    onError: (err) => {
+      if (err instanceof ApiError) {
+        toast.error(err.message);
+        return;
+      }
+
+      toast.error("Algo deu errado");
+    },
+  });
+
+  const form = useForm<z.infer<typeof schema>>({
+    resolver: zodResolver(schema),
+    defaultValues: {
+      label: defaultValues?.label || "",
+      description: defaultValues?.description || "",
+      mail_subject: defaultValues?.mail_subject || "",
+      teams_webhook: defaultValues?.teams_webhook || "",
+      attach_csv: defaultValues?.attach_csv || false,
+      mail_to: defaultValues?.mail_to?.map((value) => ({ email: value })) || [],
+    },
+  });
+
+  const emails = useFieldArray({
+    control: form.control,
+    name: "mail_to",
+  });
+
+  function onSubmit(values: z.infer<typeof schema>) {
+    if (onFormSubmit) {
+      onFormSubmit({
+        label: values.label,
+        description: values.description,
+        attach_csv: values.attach_csv ?? false,
+        mail_to: values.mail_to?.map((value) => value.email),
+        mail_subject:
+          values.mail_subject === "" ? undefined : values.mail_subject,
+        terms: searchTerms,
+      });
+    } else {
+      mutation.mutate({
+        label: values.label,
+        description: values.description,
+        attach_csv: values.attach_csv ?? false,
+        mail_to: values.mail_to?.map((value) => value.email),
+        mail_subject:
+          values.mail_subject === "" ? undefined : values.mail_subject,
+        terms: searchTerms,
+      });
+    }
+  }
+
+  function handleAddSearchTerm() {
+    if (!term && canAddTerms) {
+      termInputRef.current?.focus();
+      return;
+    }
+    if (!canAddTerms) return;
+
+    setSearchTerms([
+      ...searchTerms,
+      {
+        term,
+        exact: true,
+      },
+    ]);
+    setTerm("");
+  }
+
+  function handleRemoveSearchTerm(searchTermIdx: number) {
+    setSearchTerms((prev) => prev.filter((_, idx) => idx !== searchTermIdx));
+  }
+
+  return (
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <div className="border bg-card p-6 space-y-4 rounded-lg shadow-sm">
+          <div>
+            <h2 className="inline-flex items-center gap-2 font-semibold">
+              <NotebookIcon className="size-5 text-primary" /> Dados Básicos
+            </h2>
+          </div>
+
+          <FormField
+            control={form.control}
+            name="label"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Nome</FormLabel>
+                <FormControl>
+                  <Input {...field} />
+                </FormControl>
+                <FormDescription>
+                  Digite um nome para identificar sua configuração
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="description"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Descrição</FormLabel>
+                <FormControl>
+                  <Textarea {...field} />
+                </FormControl>
+                <FormDescription>
+                  Descreva a finalidade de sua configuração
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="border bg-card p-6 space-y-4 rounded-lg shadow-sm">
+          <div>
+            <h2 className="inline-flex items-center gap-2 font-semibold">
+              <FileSearchIcon className="size-5 text-primary" /> Termos de Busca
+            </h2>
+          </div>
+
+          <div className="flex items-start gap-2">
+            <div className="grid gap-1 flex-1">
+              <Input
+                id="term"
+                ref={termInputRef}
+                value={term}
+                onChange={(e) => setTerm(e.target.value)}
+                placeholder="Digite um termo como seu nome, MASP, etc."
+                disabled={!canAddTerms}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleAddSearchTerm();
+                  }
+                }}
+              />
+              <span className="text-xs">
+                Você pode adicionar um máximo de 5 termos.
+              </span>
+            </div>
+
+            <Button
+              type="button"
+              size="icon"
+              disabled={!canAddTerms}
+              onClick={handleAddSearchTerm}
+            >
+              <PlusIcon className="size-5" />
+              <span className="sr-only">Adicionar</span>
+            </Button>
+          </div>
+
+          <div className="divide-y">
+            {searchTerms.length > 0 ? (
+              searchTerms.map((searchTerm, idx) => (
+                <div
+                  key={`${searchTerm.term}-${idx}`}
+                  className="flex items-center p-2"
+                >
+                  <p className="flex-1 text-sm">{searchTerm.term}</p>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="link"
+                    className="text-destructive"
+                    onClick={() => handleRemoveSearchTerm(idx)}
+                  >
+                    Remover
+                    <span className="sr-only">Remover</span>
+                  </Button>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground p-4 text-center font-medium">
+                Nenhum termo adicionado
+              </p>
+            )}
+          </div>
+        </div>
+
+        <div className="border bg-card p-6 space-y-4 rounded-lg shadow-sm">
+          <div>
+            <h2 className="inline-flex items-center gap-2 font-semibold">
+              <MailIcon className="size-5 text-primary" /> Notificações Email
+            </h2>
+          </div>
+
+          <FormField
+            control={form.control}
+            name="mail_subject"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Assunto do Email</FormLabel>
+                <FormControl>
+                  <Input
+                    {...field}
+                    placeholder="Publicações do Diário Oficial"
+                  />
+                </FormControl>
+                <FormDescription>
+                  Define o assunto do email de notificação que será enviado
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <div className="grid gap-1.5">
+            <FormLabel>Lista de Emails</FormLabel>
+            {emails.fields.map((field, index) => (
+              <FormField
+                key={field.id}
+                control={form.control}
+                name={`mail_to.${index}.email`}
+                render={({ field }) => (
+                  <FormItem>
+                    <div className="flex items-center gap-2">
+                      <FormControl>
+                        <Input
+                          {...field}
+                          placeholder="Digite o email que receberá a notificação"
+                        />
+                      </FormControl>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="shrink-0"
+                        onClick={() => emails.remove(index)}
+                      >
+                        <XIcon className="size-5" />
+                      </Button>
+                    </div>
+
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            ))}
+          </div>
+
+          <Button type="button" onClick={() => emails.append({ email: "" })}>
+            Adicionar Email
+          </Button>
+
+          <FormField
+            control={form.control}
+            name="attach_csv"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center justify-between rounded-md border p-4">
+                <div className="space-y-0.5">
+                  <FormLabel>Anexar CSV</FormLabel>
+                  <FormDescription>
+                    Selecione essa opção para enviar o CSV em anexo no email de
+                    notificação
+                  </FormDescription>
+                </div>
+                <FormControl>
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="border bg-card p-6 space-y-4 rounded-lg shadow-sm">
+          <div>
+            <h2 className="inline-flex items-center gap-2 font-semibold">
+              <TeamsIcon /> Notificações Teams
+            </h2>
+          </div>
+
+          <FormField
+            control={form.control}
+            name="teams_webhook"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Webhook</FormLabel>
+                <FormControl>
+                  <Input {...field} />
+                </FormControl>
+                <FormDescription>
+                  Digite a URL de Webhook do Teams
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="flex justify-end">
+          <Button type="submit">Enviar</Button>
+        </div>
+      </form>
+    </Form>
+  );
+};
+
+
+--- ui/src/hooks/use-search-configs.tsx ---
+
+import { listSearchConfigs } from "@/lib/api";
+import { useQuery } from "@tanstack/react-query";
+
+export function useSearchConfigs() {
+  return useQuery({
+    queryKey: ["search-configs"],
+    queryFn: listSearchConfigs,
+  });
+}
+
+
+--- ui/src/lib/api.ts ---
+
+export type ErrorResponse = {
+  code: string;
+  message: string;
+  errors?: Record<string, string>;
+};
+
+export class ApiError extends Error {
+  code: string;
+  statusCode: number;
+  errors?: Record<string, string>;
+
+  constructor(statusCode: number, { message, code, errors }: ErrorResponse) {
+    super(message);
+    this.statusCode = statusCode;
+    this.code = code;
+    this.errors = errors;
+  }
+}
+
+export async function apiFetch<T>(
+  input: string | URL | Request,
+  options?: RequestInit
+): Promise<T> {
+  const res = await fetch(input, {
+    ...options,
+    credentials: "include",
+    headers: {
+      ...options?.headers,
+    },
+  });
+
+  if (!res.ok) {
+    if (res.status === 401 && input !== "/api/auth/me") {
+      window.dispatchEvent(new Event("auth:signout"));
+    }
+    const data = await res.json();
+    throw new ApiError(res.status, data);
+  }
+
+  return res.status === 204 ? (null as any) : res.json();
+}
+
+export type User = {
+  id: string;
+  email: string;
+  email_verified: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export async function currentUser(): Promise<User | null> {
+  return await apiFetch<User>("/api/auth/me");
+}
+
+export async function signOut(): Promise<void> {
+  await apiFetch("/api/auth/sign-out", {
+    method: "POST",
+  });
+}
+
+export type SearchTerm = {
+  term: string;
+  exact: boolean;
+};
+
+export type SearchConfig = {
+  id: number;
+  label: string;
+  description: string;
+  active: boolean;
+  attach_csv: boolean;
+  mail_to: string[];
+  mail_subject: string;
+  teams_webhooks: string;
+  terms: SearchTerm[];
+};
+
+export async function listSearchConfigs(): Promise<SearchConfig[]> {
+  return await apiFetch("/api/search/configs");
+}
+
+export async function getSearchConfigs(
+  configId: number
+): Promise<SearchConfig> {
+  return await apiFetch(`/api/search/configs/${configId}`);
+}
+
+export type CreateSearchConfig = {
+  label: string;
+  attach_csv: boolean;
+  description?: string;
+  mail_to?: string[];
+  mail_subject?: string;
+  teams_webhooks?: string;
+  terms: SearchTerm[];
+};
+
+export async function createSearchConfig(
+  data: CreateSearchConfig
+): Promise<SearchConfig> {
+  return await apiFetch("/api/search/configs", {
+    body: JSON.stringify(data),
+    method: "POST",
+  });
+}
+
+export type UpdateSearchConfig = CreateSearchConfig & {
+  id: number;
+};
+
+export async function updateSearchConfig(data: UpdateSearchConfig) {
+  await apiFetch(`/api/search/configs/${data.id}`, {
+    body: JSON.stringify(data),
+    method: "PUT",
+  });
+}
+
+export async function deleteSearchConfig(configId: number): Promise<void> {
+  await apiFetch(`/api/search/configs/${configId}`, {
+    method: "DELETE",
+  });
+}
+
+export type Highlight = {
+  page: number;
+  content: string;
+  term: string;
+  page_url: string;
+};
+
+export type Report = {
+  publish_date: string;
+  highlights: Highlight[];
+  trigger: "backtest" | "cron";
+  config_id: number;
+};
+
+type BacktestConfig = {
+  configId: number;
+  date: string;
+};
+
+export async function backtestSearchConfig({
+  configId,
+  date,
+}: BacktestConfig): Promise<Report> {
+  const params = new URLSearchParams({
+    date,
+  });
+
+  return await apiFetch(
+    `/api/search/configs/${configId}/backtest?${params.toString()}`
+  );
+}
+
+export type ApiFeatures = {
+  backtest: boolean;
+};
+
+/**
+ * Retorna as features habilitadas pelo Servidor.
+ */
+export async function getApiFeatures(): Promise<ApiFeatures> {
+  return await apiFetch("/api/features");
+}
+
+
+--- ui/src/pages/search-config.tsx ---
+
+import { SearchConfigForm } from "@/components/search-config-form";
+import { getSearchConfigs, updateSearchConfig } from "@/lib/api";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { MoveLeftIcon } from "lucide-react";
+import { Link, useNavigate, useParams } from "react-router";
+import { toast } from "sonner";
+
+export function SearchConfigPage() {
+  const { id } = useParams();
+  if (!id) return null;
+
+  const configId = parseInt(id);
+  if (isNaN(configId) || configId < 1) {
+    return <div>ID inválido.</div>;
+  }
+
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const mutation = useMutation({
+    mutationFn: updateSearchConfig,
+    onSuccess() {
+      toast.success("Sucesso", {
+        description: "Sua configuração foi atualizada com sucesso!",
+      });
+      navigate("/");
+    },
+    onError() {
+      toast.error("Algo deu errado", {
+        description: "Não foi possível atualizar sua configuração",
+      });
+    },
+    onSettled() {
+      queryClient.invalidateQueries();
+    },
+  });
+
+  const { data, status } = useQuery({
+    queryKey: ["search-config", id],
+    queryFn: () => getSearchConfigs(parseInt(id)),
+  });
+
+  if (status === "pending") {
+    return (
+      <section className="space-y-4 max-w-2xl mx-auto">
+        <p>Carregando...</p>
+      </section>
+    );
+  }
+
+  if (status === "error") {
+    return (
+      <section className="space-y-4 max-w-2xl mx-auto">
+        <p>Não foi possível carregar configuração de busca</p>
+      </section>
+    );
+  }
+
+  return (
+    <section className="space-y-4 max-w-2xl mx-auto">
+      <div>
+        <Link
+          to="/"
+          className="text-sm inline-flex items-center justify-center gap-1.5 underline"
+        >
+          <MoveLeftIcon className="size-4" /> Voltar
+        </Link>
+      </div>
+
+      <div>
+        <h1 className="text-3xl font-bold">Alterar {data?.label}</h1>
+        <p className="text-sm text-muted-foreground">
+          Preencha o formulário abaixo para alterar a configuração.
+        </p>
+      </div>
+
+      {data ? (
+        <SearchConfigForm
+          defaultValues={{
+            searchTerms: data.terms,
+            label: data.label,
+            description: data.description,
+            attach_csv: data.attach_csv,
+            mail_subject: data.mail_subject,
+            mail_to: data.mail_to,
+            teams_webhook: data.teams_webhooks,
+          }}
+          onFormSubmit={(values) => {
+            mutation.mutate({
+              id: configId,
+              ...values,
+            });
+          }}
+        />
+      ) : null}
+    </section>
+  );
+}

@@ -1,0 +1,2 @@
+"""Utilitários da aplicação."""
+
