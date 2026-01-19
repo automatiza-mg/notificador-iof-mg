@@ -1,9 +1,10 @@
 """Geração de emails de notificação."""
 import urllib.parse
 from datetime import date
-from typing import List
+from typing import List, Optional
 from jinja2 import Template
-from mailer.mailer import Email
+from mailer.mailer import Email, Attachment
+from mailer.csv_generator import generate_csv_from_report, get_csv_filename
 from search.source import Report
 
 
@@ -45,7 +46,7 @@ Os trechos destacados são:
 """
 
 
-def notification_email(to: List[str], report: Report, subject: str = None) -> Email:
+def notification_email(to: List[str], report: Report, subject: str = None, attach_csv: bool = False) -> Email:
     """
     Gera email de notificação a partir de um relatório de busca.
     
@@ -53,6 +54,7 @@ def notification_email(to: List[str], report: Report, subject: str = None) -> Em
         to: Lista de endereços de email
         report: Relatório de busca
         subject: Assunto do email (opcional)
+        attach_csv: Se True, anexa arquivo CSV com os resultados
         
     Returns:
         Email pronto para envio
@@ -116,10 +118,24 @@ def notification_email(to: List[str], report: Report, subject: str = None) -> Em
     </html>
     """
     
+    # Gerar anexo CSV se solicitado
+    attachments = None
+    if attach_csv and report.count > 0:
+        csv_content = generate_csv_from_report(report)
+        csv_filename = get_csv_filename(report)
+        attachments = [
+            Attachment(
+                filename=csv_filename,
+                content=csv_content,
+                content_type="text/csv; charset=utf-8"
+            )
+        ]
+    
     return Email(
         to=to,
         subject=subject or "Novas notificações - Diário Oficial",
         text=text_body,
-        html=html_body
+        html=html_body,
+        attachments=attachments
     )
 

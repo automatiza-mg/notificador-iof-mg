@@ -53,11 +53,17 @@ def notify_search_config(publish_date_str: str, config_id: int) -> None:
                 if config.mail_to:
                     mailer = Mailer(app)
                     subject = config.mail_subject or "Novas notificações - Diário Oficial"
-                    email = notification_email(config.mail_to, report, subject=subject)
+                    email = notification_email(
+                        config.mail_to, 
+                        report, 
+                        subject=subject,
+                        attach_csv=config.attach_csv
+                    )
                     
                     try:
                         mailer.send(email)
-                        print(f"Email enviado para {config.mail_to} (config {config_id})")
+                        csv_info = " com CSV anexado" if config.attach_csv and report.count > 0 else ""
+                        print(f"Email enviado para {config.mail_to} (config {config_id}){csv_info}")
                     except Exception as e:
                         print(f"Erro ao enviar email: {e}")
                         # Não falhar o job por erro de email

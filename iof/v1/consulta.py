@@ -6,7 +6,7 @@ from datetime import date
 from typing import List, Optional
 from urllib.parse import urlencode
 
-from iof.client import Pagina, ErrNotFound
+from iof.common import Pagina, ErrNotFound
 from pdf.extractor import PDFExtractor
 
 

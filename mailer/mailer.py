@@ -6,12 +6,21 @@ from flask_mail import Mail, Message
 
 
 @dataclass
+class Attachment:
+    """Estrutura de anexo de email."""
+    filename: str
+    content: bytes
+    content_type: str = "application/octet-stream"
+
+
+@dataclass
 class Email:
     """Estrutura de email."""
     to: List[str]
     subject: str
     text: str
     html: Optional[str] = None
+    attachments: Optional[List[Attachment]] = None
 
 
 class Mailer:
@@ -62,6 +71,16 @@ class Mailer:
                 body=email.text,
                 html=email.html
             )
+            
+            # Adicionar anexos se houver
+            if email.attachments:
+                for attachment in email.attachments:
+                    msg.attach(
+                        filename=attachment.filename,
+                        content_type=attachment.content_type,
+                        data=attachment.content
+                    )
+            
             messages.append(msg)
         
         try:

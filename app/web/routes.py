@@ -298,9 +298,15 @@ def backtest_config(config_id):
                     try:
                         mailer = Mailer(current_app)
                         subject = config.mail_subject or "Teste de Busca - Diário Oficial"
-                        email = notification_email(config.mail_to, report, subject=subject)
+                        email = notification_email(
+                            config.mail_to, 
+                            report, 
+                            subject=subject,
+                            attach_csv=config.attach_csv
+                        )
                         mailer.send(email)
-                        flash(f'Email de teste enviado com sucesso para {len(config.mail_to)} destinatário(s)!', 'success')
+                        csv_info = " com CSV anexado" if config.attach_csv and report.count > 0 else ""
+                        flash(f'Email de teste enviado com sucesso para {len(config.mail_to)} destinatário(s)!{csv_info}', 'success')
                     except (ConnectionRefusedError, OSError) as e:
                         error_code = getattr(e, 'errno', None)
                         if error_code == 61 or 'Connection refused' in str(e) or '[Errno 61]' in str(e):

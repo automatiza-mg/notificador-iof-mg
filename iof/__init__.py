@@ -1,5 +1,5 @@
-"""Cliente para API do Diário Oficial de MG."""
-from iof.client import IOFClient, Pagina, ErrNotFound
+"""Cliente para API v1 do Diário Oficial de MG."""
+from iof.common import Pagina, ErrNotFound
 
-__all__ = ['IOFClient', 'Pagina', 'ErrNotFound']
+__all__ = ['Pagina', 'ErrNotFound']
 
