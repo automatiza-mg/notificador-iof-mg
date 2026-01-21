@@ -72,19 +72,32 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
-    connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
-        prefix="sqlalchemy.",
-        poolclass=pool.NullPool,
-    )
+    # Usar a URL do banco configurada no Flask app context
+    # Isso garante que usamos o mesmo banco que a aplicação
+    with app.app_context():
+        database_url = app.config.get('SQLALCHEMY_DATABASE_URI')
+        if database_url:
+            # Criar engine diretamente da URL
+            connectable = engine_from_config(
+                {'sqlalchemy.url': database_url},
+                prefix="sqlalchemy.",
+                poolclass=pool.NullPool,
+            )
+        else:
+            # Fallback para configuração padrão
+            connectable = engine_from_config(
+                config.get_section(config.config_ini_section, {}),
+                prefix="sqlalchemy.",
+                poolclass=pool.NullPool,
+            )
 
-    with connectable.connect() as connection:
-        context.configure(
-            connection=connection, target_metadata=target_metadata
-        )
+        with connectable.connect() as connection:
+            context.configure(
+                connection=connection, target_metadata=target_metadata
+            )
 
-        with context.begin_transaction():
-            context.run_migrations()
+            with context.begin_transaction():
+                context.run_migrations()
 
 
 if context.is_offline_mode():

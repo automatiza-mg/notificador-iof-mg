@@ -1,0 +1,60 @@
+name: Deploy to Azure Web App
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:  # Permite execução manual
+
+env:
+  AZURE_WEBAPP_NAME: ${{ secrets.AZURE_WEB_APP_NAME }}
+  AZURE_RESOURCE_GROUP: ${{ secrets.AZURE_RESOURCE_GROUP }}
+  AZURE_REGISTRY_NAME: ${{ secrets.AZURE_REGISTRY_NAME }}
+  IMAGE_NAME: notificador-iof-mg
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout código
+        uses: actions/checkout@v4
+
+      - name: Login no Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Login no Azure Container Registry
+        run: |
+          az acr login --name ${{ env.AZURE_REGISTRY_NAME }}
+
+      - name: Build e push imagem Docker
+        run: |
+          # Build da imagem
+          docker build -t ${{ env.AZURE_REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }} .
+          docker build -t ${{ env.AZURE_REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:latest .
+          
+          # Push para ACR
+          docker push ${{ env.AZURE_REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          docker push ${{ env.AZURE_REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:latest
+
+      - name: Atualizar Web App com nova imagem
+        run: |
+          az webapp config container set \
+            --name ${{ env.AZURE_WEBAPP_NAME }} \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --docker-custom-image-name ${{ env.AZURE_REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:latest \
+            --docker-registry-server-url https://${{ env.AZURE_REGISTRY_NAME }}.azurecr.io
+
+      - name: Reiniciar Web App
+        run: |
+          az webapp restart \
+            --name ${{ env.AZURE_WEBAPP_NAME }} \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }}
+
+      - name: Verificar deploy
+        run: |
+          echo "Deploy concluído! Aplicação disponível em:"
+          echo "https://${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net"

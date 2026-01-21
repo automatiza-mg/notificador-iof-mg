@@ -14,9 +14,24 @@ class Config:
     
     # Segurança
     SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret-key-change-in-production')
+    API_KEY = os.getenv('API_KEY', '')  # Para proteger rotas administrativas
     
     # Banco de Dados
-    SQLALCHEMY_DATABASE_URI = os.getenv('DATABASE_URL', 'sqlite:///local.db')
+    # Por padrão, Flask cria SQLite em instance/ quando usa sqlite:///
+    # Garantir que o caminho seja absoluto e explícito
+    _database_url = os.getenv('DATABASE_URL', '')
+    if not _database_url or _database_url == 'sqlite:///local.db':
+        # Calcular caminho absoluto para instance/local.db
+        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        instance_dir = os.path.join(base_dir, 'instance')
+        # Criar diretório se não existir (fazer de forma segura)
+        try:
+            os.makedirs(instance_dir, exist_ok=True)
+        except (OSError, PermissionError):
+            pass  # Se falhar, Flask tentará criar
+        default_db_path = os.path.join(instance_dir, 'local.db')
+        _database_url = f'sqlite:///{default_db_path}'
+    SQLALCHEMY_DATABASE_URI = _database_url
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # IOF

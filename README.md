@@ -229,9 +229,7 @@ uv run python test_script.py
 
 ## Troubleshooting
 
-### Email não está sendo enviado
-
-1. Verifique as configurações no arquivo `.env`
+### Email não está sendo enviado1. Verifique as configurações no arquivo `.env`
 2. Para Gmail, certifique-se de usar uma "Senha de App"
 3. Verifique se `MAIL_USE_TLS=true` para Gmail na porta 587
 4. Teste a conexão SMTP usando o backtest na interface web

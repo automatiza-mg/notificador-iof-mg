@@ -16,6 +16,7 @@ dependencies = [
     "requests>=2.31.0",
     "redis>=5.0.0",
     "rq>=1.15.0",
+    "gunicorn>=21.2.0",
 ]
 
 [build-system]

@@ -33,9 +33,10 @@ def create_app(config_name: str | None = None) -> Flask:
     mail.init_app(app)
     
     # Registrar blueprints
-    from app.api import search_config, features
+    from app.api import search_config, features, tasks
     app.register_blueprint(search_config.bp)
     app.register_blueprint(features.bp)
+    app.register_blueprint(tasks.bp)
     
     # Registrar blueprint web (HTML)
     from app.web import routes as web_routes
