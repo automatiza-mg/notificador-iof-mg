@@ -58,11 +58,6 @@ RUN chmod +x entrypoint.sh
 # Expor porta (Azure usa 8000 por padrão, mas aceita PORT env var)
 EXPOSE 8000
 
-# Health check (usando curl que será instalado se necessário, ou Python simples)
-# Azure Web App tem seu próprio health check, então este é opcional
-# HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-#     CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/features')" || exit 1
-
 # Entrypoint
 ENTRYPOINT ["./entrypoint.sh"]
 
