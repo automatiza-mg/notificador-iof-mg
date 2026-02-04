@@ -11,6 +11,7 @@ from flask import (
     flash,
     current_app,
 )
+from flask_login import current_user, login_required
 from pydantic import ValidationError
 
 from app.services.search_service import SearchService
@@ -31,15 +32,17 @@ def get_service():
 
 
 @bp.route("/")
+@login_required
 def index():
-    """Lista todas as configurações."""
+    """Lista todas as configurações do usuário logado."""
     active_only = request.args.get("active_only", "true").lower() == "true"
     service = get_service()
-    configs = service.list_configs(active_only=active_only)
+    configs = service.list_configs(active_only=active_only, user_id=current_user.id)
     return render_template("index.html", configs=configs, active_only=active_only)
 
 
 @bp.route("/configs/new", methods=["GET", "POST"])
+@login_required
 def create_config():
     """Criar nova configuração."""
     if request.method == "POST":
@@ -82,7 +85,7 @@ def create_config():
             # Validar com Pydantic
             config_create = SearchConfigCreate(**config_data)
             service = get_service()
-            config = service.save_config(config_create)
+            config = service.save_config(config_create, user_id=current_user.id)
 
             flash("Configuração criada com sucesso!", "success")
             return redirect(url_for("web.detail_config", config_id=config.id))
@@ -113,10 +116,11 @@ def create_config():
 
 
 @bp.route("/configs/<int:config_id>")
+@login_required
 def detail_config(config_id):
-    """Visualizar detalhes de uma configuração."""
+    """Visualizar detalhes de uma configuração (apenas do dono)."""
     service = get_service()
-    config = service.get_config(config_id)
+    config = service.get_config(config_id, user_id=current_user.id)
     if not config:
         flash("Configuração não encontrada", "error")
         return redirect(url_for("web.index"))
@@ -125,10 +129,11 @@ def detail_config(config_id):
 
 
 @bp.route("/configs/<int:config_id>/edit", methods=["GET", "POST"])
+@login_required
 def edit_config(config_id):
-    """Editar configuração."""
+    """Editar configuração (apenas do dono)."""
     service = get_service()
-    config = service.get_config(config_id)
+    config = service.get_config(config_id, user_id=current_user.id)
     if not config:
         flash("Configuração não encontrada", "error")
         return redirect(url_for("web.index"))
@@ -172,7 +177,9 @@ def edit_config(config_id):
         try:
             # Validar com Pydantic
             config_update = SearchConfigUpdate(**config_data)
-            updated_config = service.update_config(config_id, config_update)
+            updated_config = service.update_config(
+                config_id, config_update, user_id=current_user.id
+            )
 
             if updated_config:
                 flash("Configuração atualizada com sucesso!", "success")
@@ -212,10 +219,11 @@ def edit_config(config_id):
 
 
 @bp.route("/configs/<int:config_id>/delete", methods=["POST"])
+@login_required
 def delete_config(config_id):
-    """Deletar configuração."""
+    """Deletar configuração (apenas do dono)."""
     service = get_service()
-    deleted = service.delete_config(config_id)
+    deleted = service.delete_config(config_id, user_id=current_user.id)
     if deleted:
         flash("Configuração deletada com sucesso!", "success")
     else:
@@ -224,10 +232,11 @@ def delete_config(config_id):
 
 
 @bp.route("/configs/<int:config_id>/backtest", methods=["GET", "POST"])
+@login_required
 def backtest_config(config_id):
-    """Página de backtest."""
+    """Página de backtest (apenas do dono)."""
     service = get_service()
-    config = service.get_config(config_id)
+    config = service.get_config(config_id, user_id=current_user.id)
     if not config:
         flash("Configuração não encontrada", "error")
         return redirect(url_for("web.index"))
@@ -466,3 +475,8 @@ def backtest_config(config_id):
         test_date=None,
         max_date=today.isoformat(),
     )
+
+
+# Registrar rotas de autenticação (login/logout)
+from app.web import auth  # noqa: E402
+auth.register(bp)

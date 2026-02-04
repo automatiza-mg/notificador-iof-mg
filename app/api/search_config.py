@@ -1,9 +1,10 @@
-"""API para gerenciar configurações de busca."""
+"""API para gerenciar configurações de busca (protegida por sessão Flask-Login)."""
 
 import os
 import traceback
 from datetime import date
 from flask import Blueprint, request, jsonify, current_app
+from flask_login import current_user, login_required
 from pydantic import ValidationError
 from app.services.search_service import SearchService
 from app.repositories.search_config_repository import SearchConfigRepository
@@ -48,20 +49,24 @@ def config_to_dict(config):
 
 
 @bp.route("", methods=["GET"])
+@login_required
 def list_configs():
-    """Lista todas as configurações de busca."""
+    """Lista configurações de busca do usuário logado."""
     try:
         service = get_service()
         active_only = request.args.get("active_only", "true").lower() == "true"
-        configs = service.list_configs(active_only=active_only)
+        configs = service.list_configs(
+            active_only=active_only, user_id=current_user.id
+        )
         return jsonify([config_to_dict(c) for c in configs]), 200
     except Exception as e:
         return server_error(str(e))
 
 
 @bp.route("", methods=["POST"])
+@login_required
 def create_config():
-    """Cria uma nova configuração de busca."""
+    """Cria uma nova configuração de busca (do usuário logado)."""
     try:
         data = request.get_json()
         if not data:
@@ -78,18 +83,19 @@ def create_config():
             return validation_error(errors)
 
         service = get_service()
-        config = service.save_config(config_create)
+        config = service.save_config(config_create, user_id=current_user.id)
         return jsonify(config_to_dict(config)), 201
     except Exception as e:
         return server_error(str(e))
 
 
 @bp.route("/<int:config_id>", methods=["GET"])
+@login_required
 def get_config(config_id):
-    """Busca uma configuração por ID."""
+    """Busca uma configuração por ID (apenas do dono)."""
     try:
         service = get_service()
-        config = service.get_config(config_id)
+        config = service.get_config(config_id, user_id=current_user.id)
         if not config:
             return not_found()
         return jsonify(config_to_dict(config)), 200
@@ -98,8 +104,9 @@ def get_config(config_id):
 
 
 @bp.route("/<int:config_id>", methods=["PUT"])
+@login_required
 def update_config(config_id):
-    """Atualiza uma configuração de busca."""
+    """Atualiza uma configuração de busca (apenas do dono)."""
     try:
         data = request.get_json()
         if not data:
@@ -116,7 +123,9 @@ def update_config(config_id):
             return validation_error(errors)
 
         service = get_service()
-        config = service.update_config(config_id, config_update)
+        config = service.update_config(
+            config_id, config_update, user_id=current_user.id
+        )
         if not config:
             return not_found()
         return jsonify(config_to_dict(config)), 200
@@ -125,11 +134,12 @@ def update_config(config_id):
 
 
 @bp.route("/<int:config_id>", methods=["DELETE"])
+@login_required
 def delete_config(config_id):
-    """Deleta uma configuração de busca."""
+    """Deleta uma configuração de busca (apenas do dono)."""
     try:
         service = get_service()
-        deleted = service.delete_config(config_id)
+        deleted = service.delete_config(config_id, user_id=current_user.id)
         if not deleted:
             return not_found()
         return "", 204
@@ -138,17 +148,18 @@ def delete_config(config_id):
 
 
 @bp.route("/<int:config_id>/backtest", methods=["GET"])
+@login_required
 def backtest_config(config_id):
-    """Executa backtest de uma configuração para uma data específica."""
+    """Executa backtest de uma configuração (apenas do dono)."""
     try:
         # Verificar se backtest está habilitado
         app_env = os.getenv("APP_ENV", "development")
         if app_env != "development":
             return not_found("Backtest disponível apenas em desenvolvimento")
 
-        # Buscar configuração
+        # Buscar configuração (ownership)
         service = get_service()
-        config = service.get_config(config_id)
+        config = service.get_config(config_id, user_id=current_user.id)
         if not config:
             return not_found()
 

@@ -61,6 +61,9 @@ class SearchConfig(db.Model):
     # Em PostgreSQL, Integer suporta até 2 bilhões, suficiente para a maioria dos casos
     # Se precisar de mais, podemos usar BigInteger apenas em PostgreSQL
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(
+        Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
     label: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False, default="")
     attach_csv: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
@@ -77,6 +80,9 @@ class SearchConfig(db.Model):
         default=get_now_utc,
         onupdate=get_now_utc,
     )
+
+    # Relacionamento com usuário (multi-tenancy)
+    user: Mapped["User"] = relationship("User", back_populates="search_configs")
 
     # Relacionamento com termos
     terms: Mapped[List["SearchTerm"]] = relationship(

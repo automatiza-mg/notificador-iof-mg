@@ -15,13 +15,24 @@ class SearchConfigRepository:
         db.session.refresh(config)
         return config
 
-    def get_by_id(self, config_id: int) -> Optional[SearchConfig]:
-        """Busca uma configuração pelo ID."""
-        return db.session.get(SearchConfig, config_id)
+    def get_by_id(
+        self, config_id: int, user_id: Optional[int] = None
+    ) -> Optional[SearchConfig]:
+        """Busca uma configuração pelo ID. Se user_id for informado, só retorna se for dono."""
+        config = db.session.get(SearchConfig, config_id)
+        if config is None:
+            return None
+        if user_id is not None and config.user_id != user_id:
+            return None
+        return config
 
-    def find_all(self, active_only: bool = True) -> List[SearchConfig]:
-        """Lista configurações, opcionalmente filtrando por ativas."""
+    def find_all(
+        self, active_only: bool = True, user_id: Optional[int] = None
+    ) -> List[SearchConfig]:
+        """Lista configurações. Se user_id for informado, filtra por dono; senão lista todas."""
         query = SearchConfig.query
+        if user_id is not None:
+            query = query.filter(SearchConfig.user_id == user_id)
         if active_only:
             query = query.filter(SearchConfig.active == True)
         return query.all()

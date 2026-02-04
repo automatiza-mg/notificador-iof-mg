@@ -22,6 +22,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from app import create_app  # noqa: E402
 from app.extensions import db  # noqa: E402
+import app.models  # noqa: E402, F401 - ensure all models are in db.metadata
 
 # Alembic Config object, which provides access to values within alembic.ini
 config = context.config

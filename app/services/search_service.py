@@ -7,26 +7,27 @@ from app.repositories.search_config_repository import SearchConfigRepository
 
 
 class SearchService:
-    """Serviço para operações CRUD de configurações de busca."""
+    """Serviço para operações CRUD de configurações de busca (multi-tenant por user_id)."""
 
     def __init__(self, repository: SearchConfigRepository):
         self.repository = repository
 
-    def save_config(self, config_data: SearchConfigCreate) -> SearchConfig:
+    def save_config(self, config_data: SearchConfigCreate, user_id: int) -> SearchConfig:
         """
-        Salva uma nova configuração de busca.
+        Salva uma nova configuração de busca (sempre associada a um usuário).
 
         Args:
             config_data: Objeto Pydantic com dados da configuração
+            user_id: ID do usuário dono da configuração
 
         Returns:
             Configuração salva
         """
-        # Converter EmailStr e HttpUrl para strings simples se necessário
         mail_to = [str(e) for e in config_data.mail_to] if config_data.mail_to else []
         webhook = str(config_data.teams_webhook) if config_data.teams_webhook else None
 
         config = SearchConfig(
+            user_id=user_id,
             label=config_data.label,
             description=config_data.description or "",
             attach_csv=config_data.attach_csv,
@@ -36,56 +37,38 @@ class SearchService:
             active=config_data.active,
         )
 
-        # O repositório lida com session.add, mas precisamos lidar com os termos
-        # Como o relacionamento cascade geralmente requer que o pai esteja na sessão,
-        # vamos usar o save inicial para garantir ID se necessário, ou construir o grafo de objetos completo.
-
-        # Estratégia: Construir objetos, adicionar termos ao objeto config, salvar tudo via repositório.
-
         for term_data in config_data.terms:
             term = SearchTerm(term=term_data.term, exact=term_data.exact)
             config.terms.append(term)
 
         return self.repository.save(config)
 
-    def get_config(self, config_id: int) -> Optional[SearchConfig]:
-        """
-        Busca uma configuração por ID.
-
-        Args:
-            config_id: ID da configuração
-
-        Returns:
-            Configuração encontrada ou None
-        """
-        return self.repository.get_by_id(config_id)
-
-    def list_configs(self, active_only: bool = True) -> List[SearchConfig]:
-        """
-        Lista todas as configurações.
-
-        Args:
-            active_only: Se True, retorna apenas configurações ativas
-
-        Returns:
-            Lista de configurações
-        """
-        return self.repository.find_all(active_only=active_only)
-
-    def update_config(
-        self, config_id: int, config_data: SearchConfigUpdate
+    def get_config(
+        self, config_id: int, user_id: Optional[int] = None
     ) -> Optional[SearchConfig]:
         """
-        Atualiza uma configuração existente.
-
-        Args:
-            config_id: ID da configuração
-            config_data: Objeto Pydantic com dados atualizados
-
-        Returns:
-            Configuração atualizada ou None se não encontrada
+        Busca uma configuração por ID. Se user_id for informado, só retorna se for dono.
         """
-        config = self.repository.get_by_id(config_id)
+        return self.repository.get_by_id(config_id, user_id=user_id)
+
+    def list_configs(
+        self, active_only: bool = True, user_id: Optional[int] = None
+    ) -> List[SearchConfig]:
+        """
+        Lista configurações. Se user_id for informado, apenas do dono; senão todas (uso em process-daily).
+        """
+        return self.repository.find_all(active_only=active_only, user_id=user_id)
+
+    def update_config(
+        self,
+        config_id: int,
+        config_data: SearchConfigUpdate,
+        user_id: Optional[int] = None,
+    ) -> Optional[SearchConfig]:
+        """
+        Atualiza uma configuração existente. Se user_id for informado, só atualiza se for dono.
+        """
+        config = self.repository.get_by_id(config_id, user_id=user_id)
         if not config:
             return None
 
@@ -124,17 +107,13 @@ class SearchService:
 
         return self.repository.save(config)
 
-    def delete_config(self, config_id: int) -> bool:
+    def delete_config(
+        self, config_id: int, user_id: Optional[int] = None
+    ) -> bool:
         """
-        Deleta uma configuração.
-
-        Args:
-            config_id: ID da configuração
-
-        Returns:
-            True se deletada, False se não encontrada
+        Deleta uma configuração. Se user_id for informado, só deleta se for dono.
         """
-        config = self.repository.get_by_id(config_id)
+        config = self.repository.get_by_id(config_id, user_id=user_id)
         if not config:
             return False
 

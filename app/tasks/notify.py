@@ -4,6 +4,7 @@ from datetime import date
 from app import create_app
 from app.extensions import db
 from app.services.search_service import SearchService
+from app.repositories.search_config_repository import SearchConfigRepository
 from app.search.source import SearchSource, Term, Trigger
 from app.mailer.mailer import Mailer
 from app.mailer.notification import notification_email
@@ -24,8 +25,10 @@ def notify_search_config(publish_date_str: str, config_id: int) -> None:
             # Parsear data
             publish_date = date.fromisoformat(publish_date_str)
 
-            # Buscar configuração
-            config = SearchService.get_config(config_id)
+            # Buscar configuração (sem filtro de usuário - job já validado pelo processamento)
+            config_repo = SearchConfigRepository()
+            search_service = SearchService(config_repo)
+            config = search_service.get_config(config_id, user_id=None)
             if not config:
                 print(f"Configuração {config_id} não encontrada")
                 return

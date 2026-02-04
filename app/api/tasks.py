@@ -7,6 +7,7 @@ from app.utils.errors import server_error
 from app.tasks.daily_gazette import process_daily_gazette
 from app.tasks.notify import notify_search_config
 from app.services.search_service import SearchService
+from app.repositories.search_config_repository import SearchConfigRepository
 from app.extensions import db
 from app.search.source import SearchSource, Pagina, Term, Trigger
 from app.iof.v1.consulta import consulta_por_data, convert_pages
@@ -164,8 +165,10 @@ def process_daily_gazette_sync(publish_date: date):
             current_app.logger.info(f"Importando {len(paginas)} páginas...")
             source.import_pages(paginas)
 
-            # Listar configurações ativas
-            configs = SearchService.list_configs(active_only=True)
+            # Listar todas as configurações ativas (de todos os usuários) para notificação
+            config_repo = SearchConfigRepository()
+            search_service = SearchService(config_repo)
+            configs = search_service.list_configs(active_only=True, user_id=None)
             current_app.logger.info(f"Encontradas {len(configs)} configurações ativas")
 
             # Processar notificações de forma síncrona (sem RQ)
@@ -195,13 +198,11 @@ def process_daily_gazette_sync(publish_date: date):
 def notify_search_config_sync(publish_date: date, config_id: int):
     """
     Versão síncrona de notify_search_config (sem criar novo app context).
-
-    Args:
-        publish_date: Data de publicação
-        config_id: ID da configuração
+    Busca config sem filtro de usuário (process-daily já listou todas).
     """
-    # Buscar configuração
-    config = SearchService.get_config(config_id)
+    config_repo = SearchConfigRepository()
+    search_service = SearchService(config_repo)
+    config = search_service.get_config(config_id, user_id=None)
     if not config:
         current_app.logger.warning(f"Configuração {config_id} não encontrada")
         return

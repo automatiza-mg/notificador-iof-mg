@@ -29,6 +29,14 @@ def bad_request(message: str = "A requisição é mal formada ou inválida") -> 
     return jsonify(response.model_dump()), 400
 
 
+def unauthorized(
+    message: str = "Autenticação necessária",
+) -> tuple:
+    """Retorna erro 401 (não autenticado)."""
+    response = ErrorResponse(code="unauthorized", message=message)
+    return jsonify(response.model_dump()), 401
+
+
 def not_found(message: str = "O recurso requisitado não foi encontrado") -> tuple:
     """Retorna erro 404."""
     response = ErrorResponse(
