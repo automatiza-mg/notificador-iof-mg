@@ -9,13 +9,10 @@ USER_CAP_ENTRA = 100
 
 def can_register_new_user() -> bool:
     """
-    Indica se ainda é permitido registrar um novo usuário (ex.: via Entra ID).
+    Indica se ainda é permitido registrar um novo usuário via Entra ID.
 
-    Regra futura: os 100 primeiros usuários únicos (contas Entra) podem ser
-    criados no primeiro login; a partir do 101º, bloquear criação e mostrar
-    "limite atingido", mas permitir login dos já cadastrados.
-
-    Nesta entrega (apenas auth local), não é chamado em nenhum fluxo;
-    deixado pronto para uso no callback OIDC do Entra ID.
+    Conta apenas usuários com auth_provider="entra". Os 100 primeiros podem
+    ser criados no primeiro login; a partir do 101º, bloquear criação
+    (mostrar "limite atingido"), mas permitir login dos já cadastrados.
     """
-    return User.query.count() < USER_CAP_ENTRA
+    return User.query.filter_by(auth_provider="entra").count() < USER_CAP_ENTRA

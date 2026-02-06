@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="refresh" content="0;url={{ auth_uri }}">
+    <title>Redirecionando...</title>
+</head>
+<body>
+    <p>Redirecionando para o login da Microsoft...</p>
+    <script>window.location.href = {{ auth_uri | tojson }};</script>
+    <noscript><a href="{{ auth_uri }}">Clique aqui para continuar</a></noscript>
+</body>
+</html>

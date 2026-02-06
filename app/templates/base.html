@@ -13,22 +13,22 @@
     <nav class="bg-blue-600 text-white shadow-lg">
         <div class="container mx-auto px-4 py-4">
             <div class="flex items-center justify-between">
-                <div class="flex items-center space-x-4">
+                <a href="{{ url_for('web.index') }}" class="flex items-center space-x-4 hover:text-blue-200 transition">
                     <i class="fas fa-newspaper text-2xl"></i>
                     <h1 class="text-xl font-bold">Notificador IOF MG - Beta</h1>
-                </div>
+                </a>
                 <div class="flex items-center space-x-4">
-                    <a href="{{ url_for('web.index') }}" class="hover:text-blue-200 transition">
-                        <i class="fas fa-list mr-2"></i>Configurações
+                    <!-- TODO: substituir # pelo URL do formulário de feedback -->
+                    <a href="#" class="text-white hover:text-blue-200 transition text-sm">
+                        &#9888; &#128736; Encontrou algum erro no sistema? Por favor nos informe neste formulário!
                     </a>
                     {% if current_user.is_authenticated %}
-                    <a href="{{ url_for('web.logout') }}" class="hover:text-blue-200 transition">
-                        <i class="fas fa-sign-out-alt mr-2"></i>Sair
-                    </a>
-                    {% else %}
-                    <a href="{{ url_for('web.login') }}" class="hover:text-blue-200 transition">
-                        <i class="fas fa-sign-in-alt mr-2"></i>Entrar
-                    </a>
+                    <span class="text-blue-100 text-sm mr-2">{{ current_user.email }}</span>
+                    <form method="post" action="{{ url_for('web.logout') }}" class="inline" aria-label="Sair">
+                        <button type="submit" class="bg-transparent border-0 text-white hover:text-blue-200 transition cursor-pointer p-0 font-inherit text-inherit">
+                            <i class="fas fa-sign-out-alt mr-2"></i>Sair
+                        </button>
+                    </form>
                     {% endif %}
                 </div>
             </div>

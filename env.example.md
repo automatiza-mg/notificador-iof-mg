@@ -95,6 +95,22 @@ REDIS_URL=redis://localhost:6379/0
 
 
 # --------------------------------------------------------------
+# MICROSOFT ENTRA ID (SSO)
+# --------------------------------------------------------------
+# Login via Microsoft (OIDC). Não commite ENTRA_CLIENT_SECRET; em produção
+# use App Settings do Azure ou Key Vault.
+ENTRA_TENANT_ID=seu-tenant-id
+ENTRA_CLIENT_ID=seu-client-id
+ENTRA_CLIENT_SECRET=nao-commitar-em-producao-use-app-settings
+# Authority (ou deixe vazio para derivar de ENTRA_TENANT_ID)
+ENTRA_AUTHORITY=https://login.microsoftonline.com/SEU_TENANT_ID
+# Redirect URI exata registrada no app Entra (ex.: DEV)
+ENTRA_REDIRECT_URI=http://localhost:5000/auth/callback
+# Escopos (MVP: apenas login)
+ENTRA_SCOPES=openid profile email
+
+
+# --------------------------------------------------------------
 # GUNICORN (PRODUÇÃO / DOCKER)
 # --------------------------------------------------------------
 # Porta que o App Service/Docker expõe para o Gunicorn
@@ -139,7 +155,21 @@ IOF_PASSWORD=
 
 ---
 
-### 2.3 Banco de dados das **configurações** (SQLAlchemy/Alembic)
+### 2.3 Entra ID (SSO)
+Login com **Microsoft Entra ID** (Azure AD) via OIDC. Variáveis:
+
+- **`ENTRA_TENANT_ID`**: ID do tenant (diretório) no Azure.
+- **`ENTRA_CLIENT_ID`**: ID do aplicativo registrado em Entra.
+- **`ENTRA_CLIENT_SECRET`**: segredo do app. **Nunca commite**; em produção use App Settings ou Key Vault.
+- **`ENTRA_AUTHORITY`**: URL da autoridade (ex.: `https://login.microsoftonline.com/<TENANT_ID>`). Se omitida, é derivada de `ENTRA_TENANT_ID`.
+- **`ENTRA_REDIRECT_URI`**: URI de redirecionamento **exata** registrada no app (ex.: `http://localhost:5000/auth/callback` para DEV).
+- **`ENTRA_SCOPES`**: escopos OIDC (MVP: `openid profile email`).
+
+No portal Azure (Entra): registre um aplicativo, defina a redirect URI e use o client secret apenas em ambiente seguro. Para o botão **Sair** encerrar também a sessão da Microsoft ("Stay signed in"), adicione a URL da página de login (ex.: `http://localhost:5000/login` e em produção `https://seu-dominio/login`) em **Redirect URIs** do app; ela é usada como `post_logout_redirect_uri` ao redirecionar para o logout da Microsoft.
+
+---
+
+### 2.4 Banco de dados das **configurações** (SQLAlchemy/Alembic)
 - **`DATABASE_URL`**: conexão do SQLAlchemy, onde ficam as tabelas:
   - `search_configs` (configurações)
   - `search_terms` (termos)
@@ -161,7 +191,7 @@ IOF_PASSWORD=
 
 ---
 
-### 2.4 Banco de **busca** (SQLite FTS5) — `diarios.db`
+### 2.5 Banco de **busca** (SQLite FTS5) — `diarios.db`
 - **`DIARIOS_DIR`** aponta para a pasta onde o app mantém o índice de busca.
 - Dentro dela fica o arquivo:
   - `diarios.db` (com tabelas FTS5 e triggers)
@@ -172,7 +202,7 @@ IOF_PASSWORD=
 
 ---
 
-### 2.5 SMTP / Email
+### 2.6 SMTP / Email
 O app usa **Flask-Mail** e as variáveis abaixo:
 
 - `MAIL_FROM_ADDRESS`

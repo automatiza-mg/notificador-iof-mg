@@ -70,6 +70,17 @@ class Config:
     # Redis (para RQ)
     REDIS_URL = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
 
+    # Microsoft Entra ID (SSO)
+    ENTRA_TENANT_ID = os.getenv('ENTRA_TENANT_ID', '')
+    ENTRA_CLIENT_ID = os.getenv('ENTRA_CLIENT_ID', '')
+    ENTRA_CLIENT_SECRET = os.getenv('ENTRA_CLIENT_SECRET', '')
+    _entra_authority = os.getenv('ENTRA_AUTHORITY', '')
+    if not _entra_authority and os.getenv('ENTRA_TENANT_ID'):
+        _entra_authority = f"https://login.microsoftonline.com/{os.getenv('ENTRA_TENANT_ID')}"
+    ENTRA_AUTHORITY = _entra_authority
+    ENTRA_REDIRECT_URI = os.getenv('ENTRA_REDIRECT_URI', 'http://localhost:5000/auth/callback')
+    ENTRA_SCOPES = os.getenv('ENTRA_SCOPES', 'openid profile email')
+
 
 class DevelopmentConfig(Config):
     """Configuração para desenvolvimento."""

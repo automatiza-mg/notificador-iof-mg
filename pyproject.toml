@@ -21,6 +21,7 @@ dependencies = [
     "tabulate>=0.9.0",
     "openpyxl>=3.1.5",
     "email-validator>=2.3.0",
+    "msal>=1.24.0",
     "pytest>=9.0.2",
     "pytest-mock>=3.15.1",
 ]

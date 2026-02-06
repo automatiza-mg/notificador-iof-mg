@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+
+{% block title %}Erro de autenticação - Notificador IOF MG{% endblock %}
+
+{% block content %}
+<div class="max-w-md mx-auto text-center">
+    <h2 class="text-2xl font-bold text-gray-800 mb-4">Erro ao entrar</h2>
+    <p class="text-gray-600 mb-6">Não foi possível completar o login com Microsoft. Tente novamente ou entre em contato com o suporte.</p>
+    <a href="{{ url_for('web.login') }}" class="inline-block bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition">Voltar ao login</a>
+</div>
+{% endblock %}

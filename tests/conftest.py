@@ -61,12 +61,9 @@ def test_user_b(app):
 
 @pytest.fixture
 def client_logged_in(app, client, test_user):
-    """Client com sessão autenticada (test_user)."""
-    client.post(
-        "/login",
-        data={"email": test_user.email, "password": "testpass123"},
-        follow_redirects=True,
-    )
+    """Client com sessão autenticada (test_user) via sessão Flask-Login."""
+    with client.session_transaction() as sess:
+        sess["_user_id"] = str(test_user.id)
     return client
 
 

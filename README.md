@@ -248,6 +248,15 @@ uv run python run.py
 
 Acesse: http://localhost:5000
 
+### Login com Microsoft Entra ID (DEV)
+
+O login é feito apenas via **Microsoft Entra ID** (SSO). Não há formulário de e-mail/senha.
+
+1. Configure no `.env` as variáveis Entra (veja `env.example.md`, seção **Entra ID (SSO)**): `ENTRA_TENANT_ID`, `ENTRA_CLIENT_ID`, `ENTRA_CLIENT_SECRET`, `ENTRA_AUTHORITY` (ou derivada de `ENTRA_TENANT_ID`), `ENTRA_REDIRECT_URI=http://localhost:5000/auth/callback`, `ENTRA_SCOPES=openid profile email`.
+2. No portal Azure (Entra ID), registre a **Redirect URI** exata: `http://localhost:5000/auth/callback`.
+3. Rode `uv run flask run` e acesse http://localhost:5000/login.
+4. Clique em **Entrar com Microsoft**; após autenticar, você será redirecionado para `/auth/callback` e em seguida para a página inicial.
+
 ### Produção (Gunicorn)
 
 ```bash
