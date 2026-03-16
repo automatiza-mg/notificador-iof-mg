@@ -5,9 +5,9 @@ Revises: 002
 Create Date: 2025-02-04
 
 """
-from sqlalchemy import inspect
-from alembic import op
 
+from alembic import op
+from sqlalchemy import inspect
 
 revision = "003"
 down_revision = "002"

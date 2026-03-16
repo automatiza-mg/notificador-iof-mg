@@ -2,10 +2,11 @@
 
 import urllib.parse
 from datetime import date
-from typing import List, Optional
+
 from jinja2 import Template
-from app.mailer.mailer import Email, Attachment
+
 from app.mailer.csv_generator import generate_csv_from_report, get_csv_filename
+from app.mailer.mailer import Attachment, Email
 from app.search.source import Report
 
 
@@ -35,7 +36,8 @@ def generate_daily_gazette_link(target_date: date) -> str:
 NOTIFICATION_TEMPLATE = """
 Acessar Diário Oficial de {{ publish_date }}: {{ gazette_link }}
 
-Foram encontradas {{ count }} novas notificações para o Diário Oficial do dia {{ publish_date }} para os termos:
+Foram encontradas {{ count }} novas notificações para o Diário Oficial do dia \
+{{ publish_date }} para os termos:
 {% for term in search_terms %}
 - {{ term.term }}
 {% endfor %}
@@ -48,7 +50,11 @@ Os trechos destacados são:
 
 
 def notification_email(
-    to: List[str], report: Report, subject: str = None, attach_csv: bool = False
+    to: list[str],
+    report: Report,
+    *,
+    subject: str | None = None,
+    attach_csv: bool = False,
 ) -> Email:
     """
     Gera email de notificação a partir de um relatório de busca.
@@ -87,11 +93,13 @@ def notification_email(
     <body>
         <h2>Novas notificações - Diário Oficial</h2>
         <p style="margin-bottom: 20px;">
-            <a href="{gazette_link}" style="background-color: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">
+            <a href="{gazette_link}" style="background-color: #007bff; color: white; \
+padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;">
                 Acessar Diário Oficial de {publish_date_formatted}
             </a>
         </p>
-        <p>Foram encontradas {report.count} novas notificações para o Diário Oficial do dia {publish_date_formatted} para os termos:</p>
+        <p>Foram encontradas {report.count} novas notificações para o Diário Oficial \
+do dia {publish_date_formatted} para os termos:</p>
         <ul>
     """
     for term in report.search_terms:

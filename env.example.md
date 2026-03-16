@@ -10,6 +10,21 @@ Este arquivo serve como **guia completo** para configurar variáveis de ambiente
 
 ---
 
+## ⚠️ ATENÇÃO DEVOPS / CLOUD ENGINEER (DEPLOY AZURE)
+
+Se você está configurando este projeto em um **Azure App Service (Web App for Containers)**, é crucial entender a persistência do container:
+
+1. A imagem Docker cria o banco de índices e de usuários em disco.
+2. Se você não configurar as variáveis de diretório para a partição `/home` do Azure, **todos os alertas dos usuários e PDFs serão apagados** a cada deploy ou reboot da máquina.
+3. Você **DEVE** definir no painel da Azure (Environment Variables):
+   - `WEBSITES_ENABLE_APP_SERVICE_STORAGE=true`
+   - `DIARIOS_DIR=/home/diarios`
+   - `DATABASE_URL=sqlite:////home/instance/local.db`
+
+Com essas 3 marcações, o `entrypoint.sh` criará as pastas automaticamente no disco persistente da Azure antes de ligar o servidor Gunicorn.
+
+---
+
 ## 1) Arquivo `.env.example` (copiar e colar)
 
 > ⚠️ **Nunca commite** seu `.env` com segredos reais. Mantenha apenas este exemplo no repositório.

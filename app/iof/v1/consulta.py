@@ -1,15 +1,14 @@
 """Consulta à API v1 do Diário Oficial."""
 
 import base64
-import requests
 from dataclasses import dataclass
 from datetime import date
-from typing import List, Optional
 from urllib.parse import urlencode
 
-from app.iof.common import Pagina, ErrNotFound
-from app.pdf.extractor import PDFExtractor
+import requests
 
+from app.iof.common import NotFoundError, Pagina
+from app.pdf.extractor import PDFExtractor
 
 V1_BASE_URL = (
     "https://www.jornalminasgerais.mg.gov.br/api/v1/Jornal/ObterEdicaoPorDataPublicacao"
@@ -42,7 +41,7 @@ class Caderno:
     id: int
     descricao: str
     ordem: int
-    secoes: List[Secao]
+    secoes: list[Secao]
 
 
 @dataclass
@@ -50,7 +49,7 @@ class Dados:
     """Dados da resposta da API."""
 
     data_publicacao: str
-    cadernos: List[Caderno]
+    cadernos: list[Caderno]
     arquivo_caderno_principal: ArquivoCadernoPrincipal
 
 
@@ -72,7 +71,7 @@ def consulta_por_data(publish_date: date) -> Response:
         Resposta da API com dados do diário
 
     Raises:
-        ErrNotFound: Se não houver diário para a data
+        NotFoundError: Se não houver diário para a data
         requests.RequestException: Se houver erro na requisição
     """
     params = urlencode({"dataPublicacao": publish_date.strftime("%Y-%m-%d")})
@@ -120,13 +119,12 @@ def consulta_por_data(publish_date: date) -> Response:
                 arquivo_caderno_principal=arquivo,
             )
         )
-    elif response.status_code == 401:
-        raise ErrNotFound(f"Diário não encontrado para {publish_date}")
-    else:
-        raise requests.RequestException(f"Unexpected status: {response.status_code}")
+    if response.status_code == 401:
+        raise NotFoundError(f"Diário não encontrado para {publish_date}")
+    raise requests.RequestException(f"Unexpected status: {response.status_code}")
 
 
-def convert_pages(arquivo_base64: str, publish_date: date) -> List[Pagina]:
+def convert_pages(arquivo_base64: str, publish_date: date) -> list[Pagina]:
     """
     Converte arquivo Base64 em lista de páginas.
 
@@ -152,16 +150,13 @@ def convert_pages(arquivo_base64: str, publish_date: date) -> List[Pagina]:
     pdf_pages = extractor.extract_pages(pdf_bytes)
 
     # Converter para Pagina do IOF
-    paginas = []
-    for pdf_page in pdf_pages:
-        paginas.append(
-            Pagina(
-                titulo="",
-                num_pagina=pdf_page.number,
-                descricao="",
-                conteudo=pdf_page.content,
-                data_publicacao=publish_date,
-            )
+    return [
+        Pagina(
+            titulo="",
+            num_pagina=pdf_page.number,
+            descricao="",
+            conteudo=pdf_page.content,
+            data_publicacao=publish_date,
         )
-
-    return paginas
+        for pdf_page in pdf_pages
+    ]

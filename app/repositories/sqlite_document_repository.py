@@ -1,11 +1,12 @@
 """Implementação SQLite do DocumentRepository."""
 
-import sqlite3
 import json
+import sqlite3
 from datetime import date
-from typing import List
 from pathlib import Path
+from typing import Any
 from urllib.parse import quote
+
 from app.repositories.document_interface import (
     DocumentRepository,
     SearchReport,
@@ -16,11 +17,11 @@ from app.repositories.document_interface import (
 class SQLiteDocumentRepository(DocumentRepository):
     """Implementação usando SQLite FTS5."""
 
-    def __init__(self, db_path: str):
+    def __init__(self, db_path: str) -> None:
         self.db_path = db_path
         self._init_db()
 
-    def _init_db(self):
+    def _init_db(self) -> None:
         """Inicializa banco e schema se necessário."""
         # Garantir que o diretório pai existe
         Path(self.db_path).parent.mkdir(parents=True, exist_ok=True)
@@ -30,25 +31,27 @@ class SQLiteDocumentRepository(DocumentRepository):
             # Carregar schema do arquivo original (mantendo compatibilidade)
             schema_path = Path(__file__).parent.parent / "search" / "schema.sql"
             if schema_path.exists():
-                with open(schema_path, "r", encoding="utf-8") as f:
+                with schema_path.open(encoding="utf-8") as f:
                     conn.executescript(f.read())
             conn.commit()
         finally:
             conn.close()
 
-    def _get_conn(self):
+    def _get_conn(self) -> sqlite3.Connection:
         conn = sqlite3.connect(self.db_path, timeout=10.0)
         conn.row_factory = sqlite3.Row
         return conn
 
-    def save_pages(self, pages: List[dict]) -> None:
+    def save_pages(self, pages: list[dict[str, Any]]) -> None:
         """
-        Salva páginas. Espera dict com: titulo, num_pagina, descricao, conteudo, data_publicacao.
+        Salva páginas. Espera dict com: titulo, num_pagina, descricao,
+        conteudo, data_publicacao.
         """
         conn = self._get_conn()
         try:
             query = """
-            REPLACE INTO documentos (titulo, num_pagina, descricao, conteudo, data_publicacao)
+            REPLACE INTO documentos
+            (titulo, num_pagina, descricao, conteudo, data_publicacao)
             VALUES (?, ?, ?, ?, ?)
             """
             for p in pages:
@@ -66,21 +69,18 @@ class SQLiteDocumentRepository(DocumentRepository):
         finally:
             conn.close()
 
-    def search(self, publish_date: date, terms: List[dict]) -> SearchReport:
+    def search(self, publish_date: date, terms: list[dict[str, Any]]) -> SearchReport:
         """
         Busca termos. Espera lista de dict com 'term' e 'exact'.
         """
         conn = self._get_conn()
-        results = []
+        results: list[SearchResult] = []
         date_str = publish_date.strftime("%Y-%m-%d")
 
         try:
             for term_data in terms:
                 term = term_data["term"]
-                if term_data.get("exact"):
-                    search_term = f'"{term}"'
-                else:
-                    search_term = term
+                search_term = f'"{term}"' if term_data.get("exact") else term
 
                 query = """
                 SELECT
@@ -93,17 +93,15 @@ class SQLiteDocumentRepository(DocumentRepository):
                 """
 
                 cursor = conn.execute(query, (date_str, search_term))
-                for row in cursor:
-                    results.append(
-                        SearchResult(
-                            page=row["num_pagina"],
-                            content=row["trecho"],
-                            term=term,
-                            page_url=self._generate_url(
-                                publish_date, row["num_pagina"]
-                            ),
-                        )
+                results.extend(
+                    SearchResult(
+                        page=row["num_pagina"],
+                        content=row["trecho"],
+                        term=term,
+                        page_url=self._generate_url(publish_date, row["num_pagina"]),
                     )
+                    for row in cursor
+                )
 
             return SearchReport(
                 publish_date=publish_date, results=results, count=len(results)
@@ -118,7 +116,7 @@ class SQLiteDocumentRepository(DocumentRepository):
                 "SELECT count(*) FROM documentos WHERE data_publicacao = ?",
                 (publish_date.strftime("%Y-%m-%d"),),
             )
-            return cursor.fetchone()[0] > 0
+            return bool(cursor.fetchone()[0] > 0)
         finally:
             conn.close()
 

@@ -1,4 +1,3 @@
-
 """Alembic environment configuration.
 
 This env.py avoids passing a URL containing percent-encoded characters (e.g. %40)
@@ -9,20 +8,19 @@ the Flask app config and passes it directly to SQLAlchemy/Alembic.
 
 from __future__ import annotations
 
-import os
 import sys
 from logging.config import fileConfig
+from pathlib import Path
 
 from alembic import context
 from sqlalchemy import create_engine
 from sqlalchemy.pool import NullPool
 
 # Add repository root to sys.path so imports work when Alembic runs
-sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
+sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from app import create_app  # noqa: E402
-from app.extensions import db  # noqa: E402
-import app.models  # noqa: E402, F401 - ensure all models are in db.metadata
+from app import create_app
+from app.extensions import db
 
 # Alembic Config object, which provides access to values within alembic.ini
 config = context.config
@@ -32,9 +30,9 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 # Build Flask app and read database URL from the same config used by the app.
-app = create_app()
-with app.app_context():
-    DATABASE_URL: str | None = app.config.get("SQLALCHEMY_DATABASE_URI")
+flask_app = create_app()
+with flask_app.app_context():
+    DATABASE_URL: str | None = flask_app.config.get("SQLALCHEMY_DATABASE_URI")
 
 # Fallback to alembic.ini only if Flask didn't provide a URL.
 if not DATABASE_URL:

@@ -1,14 +1,14 @@
 """Worker para enviar notificações."""
 
 from datetime import date
+from pathlib import Path
+
 from app import create_app
-from app.extensions import db
-from app.services.search_service import SearchService
-from app.repositories.search_config_repository import SearchConfigRepository
-from app.search.source import SearchSource, Term, Trigger
 from app.mailer.mailer import Mailer
 from app.mailer.notification import notification_email
-import os
+from app.repositories.search_config_repository import SearchConfigRepository
+from app.search.source import SearchSource, Term, Trigger
+from app.services.search_service import SearchService
 
 
 def notify_search_config(publish_date_str: str, config_id: int) -> None:
@@ -25,17 +25,18 @@ def notify_search_config(publish_date_str: str, config_id: int) -> None:
             # Parsear data
             publish_date = date.fromisoformat(publish_date_str)
 
-            # Buscar configuração (sem filtro de usuário - job já validado pelo processamento)
+            # Buscar configuração (sem filtro de usuário
+            # job já validado pelo processamento)
             config_repo = SearchConfigRepository()
             search_service = SearchService(config_repo)
             config = search_service.get_config(config_id, user_id=None)
             if not config:
-                print(f"Configuração {config_id} não encontrada")
+                app.logger.warning("Configuração %s não encontrada", config_id)
                 return
 
             # Inicializar source de busca
             diarios_dir = app.config.get("DIARIOS_DIR", "diarios")
-            search_db = os.path.join(diarios_dir, "diarios.db")
+            search_db = str(Path(diarios_dir) / "diarios.db")
             source = SearchSource(search_db)
 
             try:
@@ -49,7 +50,7 @@ def notify_search_config(publish_date_str: str, config_id: int) -> None:
 
                 # Se não houver matches, pular
                 if report.count == 0:
-                    print(f"Nenhum match encontrado para config {config_id}")
+                    app.logger.info("Nenhum match encontrado para config %s", config_id)
                     return
 
                 # Enviar emails se configurado
@@ -72,19 +73,19 @@ def notify_search_config(publish_date_str: str, config_id: int) -> None:
                             if config.attach_csv and report.count > 0
                             else ""
                         )
-                        print(
-                            f"Email enviado para {config.mail_to} (config {config_id}){csv_info}"
+                        app.logger.info(
+                            "Email enviado para %s (config %s)%s",
+                            config.mail_to,
+                            config_id,
+                            csv_info,
                         )
-                    except Exception as e:
-                        print(f"Erro ao enviar email: {e}")
+                    except Exception:
+                        app.logger.exception("Erro ao enviar email")
                         # Não falhar o job por erro de email
 
             finally:
                 source.close()
 
-        except Exception as e:
-            print(f"Erro ao processar notificação: {e}")
-            import traceback
-
-            traceback.print_exc()
+        except Exception:
+            app.logger.exception("Erro ao processar notificação")
             raise

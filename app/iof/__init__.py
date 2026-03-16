@@ -1,5 +1,5 @@
 """Cliente para API v1 do Diário Oficial de MG."""
 
-from app.iof.common import Pagina, ErrNotFound
+from app.iof.common import NotFoundError, Pagina
 
-__all__ = ["Pagina", "ErrNotFound"]
+__all__ = ["NotFoundError", "Pagina"]

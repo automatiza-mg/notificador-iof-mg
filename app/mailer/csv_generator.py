@@ -2,7 +2,7 @@
 
 import csv
 import io
-from datetime import date
+
 from app.search.source import Report
 
 

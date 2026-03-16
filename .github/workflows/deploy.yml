@@ -46,7 +46,7 @@ jobs:
             --resource-group "${{ env.AZURE_RESOURCE_GROUP }}" \
             --name "${{ env.AZURE_WEBAPP_NAME }}" \
             --resource-type "Microsoft.Web/sites" \
-            --set "properties.siteConfig.linuxFxVersion=DOCKER|${{ env.IMAGE }}"
+            --set "properties.siteConfig.linuxFxVersion=DOCKER|${{ env.AZURE_REGISTRY_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}"
 
       - name: Reiniciar Web App
         run: az webapp restart --name "${{ env.AZURE_WEBAPP_NAME }}" --resource-group "${{ env.AZURE_RESOURCE_GROUP }}"

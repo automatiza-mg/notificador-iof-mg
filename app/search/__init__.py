@@ -1,5 +1,5 @@
 """Motor de busca SQLite FTS5."""
 
-from app.search.source import SearchSource, Term, Trigger, Report, Highlight
+from app.search.source import Highlight, Report, SearchSource, Term, Trigger
 
-__all__ = ["SearchSource", "Term", "Trigger", "Report", "Highlight"]
+__all__ = ["Highlight", "Report", "SearchSource", "Term", "Trigger"]

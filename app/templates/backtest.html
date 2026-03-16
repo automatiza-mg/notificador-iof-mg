@@ -3,89 +3,83 @@
 {% block title %}Backtest - {{ config.label }} - Notificador IOF MG{% endblock %}
 
 {% block content %}
-<div class="mb-6">
-    <a href="{{ url_for('web.detail_config', config_id=config.id) }}" class="text-blue-600 hover:text-blue-800 mb-4 inline-block">
-        <i class="fas fa-arrow-left mr-2"></i>Voltar para detalhes
-    </a>
-    <h2 class="text-3xl font-bold text-gray-800">Testar Busca: {{ config.label }}</h2>
-    <p class="text-gray-600 mt-2">Teste sua configuração de busca em uma data específica do Diário Oficial</p>
-</div>
+<div class="w-full max-w-6xl mx-auto flex flex-col min-h-[70vh]">
+    <!-- Cabeçalho Principal -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-12 gap-4">
+        <div>
+            <h2 class="text-[2rem] font-bold text-[#071932] mb-1">Testar alerta cadastrado</h2>
+            <p class="text-[1.05rem] text-gray-800">Teste sua configuração de alerta em uma data específica do Diário Oficial</p>
+        </div>
+        
+        <div class="flex flex-col items-end gap-3">
+            <a href="{{ url_for('web.index') }}" class="flex items-center gap-2 px-4 py-2 bg-[#E2E8F0] hover:bg-[#CBD5E1] text-[#071932] rounded-lg font-bold transition mr-2">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                Voltar
+            </a>
+        </div>
+    </div>
 
-<!-- Formulário de Backtest -->
-<div class="bg-white rounded-lg shadow-md p-6 mb-6">
-    <form method="POST" id="backtestForm">
-        <div class="flex items-end gap-4">
-            <div class="flex-1">
-                <label for="date" class="block text-sm font-medium text-gray-700 mb-2">
-                    Data do Diário <span class="text-red-500">*</span>
-                </label>
+    <!-- Formulário de Backtest -->
+    <form method="POST" id="backtestForm" class="flex-grow flex flex-col">
+        <!-- Grid de Campos -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-x-16 gap-y-10 mb-16">
+            <!-- Nome do Alerta -->
+            <div>
+                <label class="block text-lg font-bold text-[#071932] mb-3">Nome do alerta</label>
+                <input type="text" value="{{ config.label }}" readonly 
+                       class="w-full px-5 py-3 bg-transparent border border-[#5C9FBD] rounded-full text-[#071932] cursor-not-allowed opacity-90 focus:outline-none">
+            </div>
+
+            <!-- Data do Diário Oficial -->
+            <div>
+                <label for="date" class="block text-lg font-bold text-[#071932] mb-3">Data do diário oficial:</label>
                 <input type="date" id="date" name="date" 
                        value="{% if test_date %}{{ test_date.isoformat() }}{% endif %}"
                        {% if max_date %}max="{{ max_date }}"{% endif %}
                        required
-                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                <p class="mt-1 text-xs text-gray-500">Selecione uma data para testar a busca</p>
+                       class="w-full px-5 py-3 bg-transparent border border-[#5C9FBD] rounded-full text-[#071932] focus:outline-none focus:ring-2 focus:ring-[#5C9FBD] appearance-none" style="color-scheme: light;">
             </div>
-            <button type="submit" id="executeBtn" class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-3 rounded-lg transition">
-                <i class="fas fa-vial mr-2"></i>Executar Teste
+        </div>
+
+        <!-- Área Central (Estado Vazio ou Resultados) -->
+        <div class="flex-grow flex flex-col justify-center items-center pb-12">
+            {% if result %}
+                {% if result.count > 0 %}
+                    <!-- Estado de Sucesso (Card com Envelope) -->
+                    <div class="bg-white border-[1.5px] border-[#071932] rounded-[3rem] px-12 py-10 shadow-sm max-w-2xl w-full text-center flex flex-col items-center justify-center mt-4">
+                        <img src="{{ url_for('static', filename='img/mail_unread_icon.png') }}" alt="Email enviado" class="h-16 mb-6" onerror="this.outerHTML='<svg class=\'w-16 h-16 text-[#5C9FBD] mb-6\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><path d=\'M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z\'></path><polyline points=\'22,6 12,13 2,6\'></polyline><circle cx=\'18\' cy=\'6\' r=\'3\' fill=\'#EF4444\' stroke=\'white\' stroke-width=\'2\'></circle></svg>'">
+                        <p class="text-[#071932] font-bold text-lg leading-relaxed px-4">
+                            Um e-mail de notificação foi enviado. Verifique sua caixa de entrada para confirmar se ele chegou corretamente.
+                        </p>
+                    </div>
+                {% else %}
+                    <!-- Estado Sem Resultados (Zero Encontrados) -->
+                    <div class="text-center py-12 mt-4">
+                        <svg class="w-16 h-16 mx-auto text-gray-300 mb-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                        <h4 class="text-lg font-semibold text-gray-700 mb-1">Nenhum resultado encontrado</h4>
+                        <p class="text-sm text-gray-500">Nenhum dos termos configurados foi encontrado nesta data.</p>
+                    </div>
+                {% endif %}
+            {% else %}
+                <!-- Empty State (Sem Resultados Iniciais) -->
+                <div class="flex flex-col items-center text-center pb-10 mt-8">
+                    <h3 class="text-[#071932] font-semibold mb-1.5">Nenhum teste executado ainda</h3>
+                    <p class="text-xs text-gray-400">Selecione uma data e clique em "Executar Teste" para ver os resultados</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Botão de Ação Inferior (Apenas se o teste ainda não rodou com sucesso) -->
+        {% if not result or result.count == 0 %}
+        <div class="flex justify-center mt-4 mb-8">
+            <button type="submit" id="executeBtn" class="min-w-[200px] text-center bg-[#5C9FBD] hover:bg-[#4A859F] text-white font-bold py-3.5 px-10 rounded-full shadow-md uppercase tracking-wide transition">
+                TESTAR
             </button>
         </div>
+        {% endif %}
     </form>
 </div>
-
-<!-- Resultados -->
-{% if result %}
-<div class="bg-white rounded-lg shadow-md p-6">
-    <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-        <i class="fas fa-chart-bar mr-2 text-blue-500"></i>Resultados do Teste
-        <span class="ml-auto text-lg font-bold {% if result.count > 0 %}text-green-600{% else %}text-gray-600{% endif %}">
-            {{ result.count }} resultado(s) encontrado(s)
-        </span>
-    </h3>
-
-    {% if result.count > 0 %}
-    <div class="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-        <p class="text-sm text-blue-800">
-            <strong>Data testada:</strong> {{ result.publish_date }} | 
-            <strong>Termos buscados:</strong> 
-            {% for term in result.search_terms %}
-                {{ term.term }}{% if not loop.last %}, {% endif %}
-            {% endfor %}
-        </p>
-    </div>
-
-    <div class="space-y-4">
-        {% for highlight in result.highlights %}
-        <div class="border border-gray-200 rounded-lg p-4 hover:bg-gray-50 transition">
-            <div class="flex items-start justify-between mb-2">
-                <div class="flex items-center">
-                    <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded text-sm font-medium">
-                        Página {{ highlight.page }}
-                    </span>
-                    <span class="ml-3 px-3 py-1 bg-gray-100 text-gray-800 rounded text-sm">
-                        Termo: {{ highlight.term }}
-                    </span>
-                </div>
-            </div>
-            <div class="mt-3 p-3 bg-gray-50 rounded border-l-4 border-blue-500">
-                <p class="text-gray-800">{{ highlight.content }}</p>
-            </div>
-        </div>
-        {% endfor %}
-    </div>
-    {% else %}
-    <div class="text-center py-12">
-        <i class="fas fa-search text-6xl text-gray-300 mb-4"></i>
-        <h4 class="text-xl font-semibold text-gray-600 mb-2">Nenhum resultado encontrado</h4>
-        <p class="text-gray-500">Nenhum dos termos configurados foi encontrado no Diário Oficial desta data.</p>
-    </div>
-    {% endif %}
-</div>
-{% else %}
-<div class="bg-white rounded-lg shadow-md p-6 text-center py-12">
-    <i class="fas fa-vial text-6xl text-gray-300 mb-4"></i>
-    <h3 class="text-xl font-semibold text-gray-600 mb-2">Nenhum teste executado ainda</h3>
-    <p class="text-gray-500">Selecione uma data e clique em "Executar Teste" para ver os resultados</p>
-</div>
-{% endif %}
 {% endblock %}

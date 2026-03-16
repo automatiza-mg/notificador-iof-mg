@@ -1,18 +1,21 @@
 """Serviço para gerenciar configurações de busca."""
 
-from typing import List, Optional
+from typing import Any
+
 from app.models.search_config import SearchConfig, SearchTerm
-from app.schemas.search_config import SearchConfigCreate, SearchConfigUpdate
 from app.repositories.search_config_repository import SearchConfigRepository
+from app.schemas.search_config import SearchConfigCreate, SearchConfigUpdate
 
 
 class SearchService:
-    """Serviço para operações CRUD de configurações de busca (multi-tenant por user_id)."""
+    """Serviço para operações CRUD de configurações de busca (multi-tenant)."""
 
-    def __init__(self, repository: SearchConfigRepository):
+    def __init__(self, repository: SearchConfigRepository) -> None:
         self.repository = repository
 
-    def save_config(self, config_data: SearchConfigCreate, user_id: int) -> SearchConfig:
+    def save_config(
+        self, config_data: SearchConfigCreate, user_id: int
+    ) -> SearchConfig:
         """
         Salva uma nova configuração de busca (sempre associada a um usuário).
 
@@ -44,29 +47,44 @@ class SearchService:
         return self.repository.save(config)
 
     def get_config(
-        self, config_id: int, user_id: Optional[int] = None
-    ) -> Optional[SearchConfig]:
+        self, config_id: int, user_id: int | None = None
+    ) -> SearchConfig | None:
         """
         Busca uma configuração por ID. Se user_id for informado, só retorna se for dono.
         """
         return self.repository.get_by_id(config_id, user_id=user_id)
 
     def list_configs(
-        self, active_only: bool = True, user_id: Optional[int] = None
-    ) -> List[SearchConfig]:
+        self, *, active_only: bool = True, user_id: int | None = None
+    ) -> list[SearchConfig]:
         """
-        Lista configurações. Se user_id for informado, apenas do dono; senão todas (uso em process-daily).
+        Lista configurações. Se user_id for informado, apenas do dono; senão todas.
         """
         return self.repository.find_all(active_only=active_only, user_id=user_id)
+
+    def list_configs_paginated(
+        self,
+        page: int,
+        per_page: int,
+        *,
+        active_only: bool = True,
+        user_id: int | None = None,
+    ) -> Any:
+        """
+        Lista configurações com paginação. Se user_id for informado, apenas do dono.
+        """
+        return self.repository.find_paginated(
+            page, per_page, active_only=active_only, user_id=user_id
+        )
 
     def update_config(
         self,
         config_id: int,
         config_data: SearchConfigUpdate,
-        user_id: Optional[int] = None,
-    ) -> Optional[SearchConfig]:
+        user_id: int | None = None,
+    ) -> SearchConfig | None:
         """
-        Atualiza uma configuração existente. Se user_id for informado, só atualiza se for dono.
+        Atualiza config existente. Se user_id informado, só atualiza se for dono.
         """
         config = self.repository.get_by_id(config_id, user_id=user_id)
         if not config:
@@ -107,9 +125,7 @@ class SearchService:
 
         return self.repository.save(config)
 
-    def delete_config(
-        self, config_id: int, user_id: Optional[int] = None
-    ) -> bool:
+    def delete_config(self, config_id: int, user_id: int | None = None) -> bool:
         """
         Deleta uma configuração. Se user_id for informado, só deleta se for dono.
         """

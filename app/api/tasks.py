@@ -1,26 +1,26 @@
 """API para tarefas administrativas e processamento."""
 
 import os
-from datetime import date
-from flask import Blueprint, request, jsonify, current_app
-from app.utils.errors import server_error
-from app.tasks.daily_gazette import process_daily_gazette
-from app.tasks.notify import notify_search_config
-from app.services.search_service import SearchService
-from app.repositories.search_config_repository import SearchConfigRepository
-from app.extensions import db
-from app.search.source import SearchSource, Pagina, Term, Trigger
+from datetime import UTC, date, datetime
+from pathlib import Path
+from typing import Any
+
+from flask import Blueprint, current_app, jsonify, request
+
 from app.iof.v1.consulta import consulta_por_data, convert_pages
 from app.mailer.mailer import Mailer
 from app.mailer.notification import notification_email
+from app.repositories.search_config_repository import SearchConfigRepository
+from app.search.source import Pagina, SearchSource, Term, Trigger
+from app.services.search_service import SearchService
 
 bp = Blueprint("tasks", __name__, url_prefix="/api/tasks")
 
 
-def verify_api_key():
+def verify_api_key() -> tuple[bool, str | None]:
     """
     Verifica se a API_KEY está presente e é válida.
-    Aceita via query parameter (?api_key=...) ou header (se não for rejeitado pelo Gunicorn).
+    Aceita via query parameter (?api_key=...) ou header.
 
     Returns:
         tuple: (is_valid, error_message)
@@ -48,7 +48,8 @@ def verify_api_key():
     if not api_key:
         return (
             False,
-            "API Key não fornecida. Use ?api_key=... na URL ou header Authorization: Bearer ...",
+            "API Key não fornecida. Use ?api_key=... na URL "
+            "ou header Authorization: Bearer ...",
         )
 
     if api_key != expected_key:
@@ -58,7 +59,7 @@ def verify_api_key():
 
 
 @bp.route("/process-daily", methods=["POST"])
-def process_daily():
+def process_daily() -> tuple[Any, int]:
     """
     Processa o diário oficial de uma data específica.
 
@@ -92,16 +93,16 @@ def process_daily():
                 return jsonify(
                     {
                         "success": False,
-                        "error": f"Formato de data inválido: {date_str}. Use YYYY-MM-DD",
+                        "error": (
+                            f"Formato de data inválido: {date_str}. Use YYYY-MM-DD"
+                        ),
                     }
                 ), 400
         else:
-            from datetime import date as date_class
-
-            publish_date = date_class.today()
+            publish_date = datetime.now(UTC).date()
 
         # Processar diário (versão síncrona sem RQ)
-        current_app.logger.info(f"Iniciando processamento do diário de {publish_date}")
+        current_app.logger.info("Iniciando processamento do diário de %s", publish_date)
 
         # Chamar função de processamento
         process_daily_gazette_sync(publish_date)
@@ -115,11 +116,11 @@ def process_daily():
         ), 200
 
     except Exception as e:
-        current_app.logger.error(f"Erro ao processar diário: {e}", exc_info=True)
+        current_app.logger.exception("Erro ao processar diário")
         return jsonify({"success": False, "error": str(e)}), 500
 
 
-def process_daily_gazette_sync(publish_date: date):
+def process_daily_gazette_sync(publish_date: date) -> None:
     """
     Versão síncrona do processamento de diário (sem RQ).
 
@@ -134,7 +135,7 @@ def process_daily_gazette_sync(publish_date: date):
         except Exception as e:
             if "not found" in str(e).lower():
                 current_app.logger.info(
-                    f"Nenhum diário encontrado para {publish_date}, pulando..."
+                    "Nenhum diário encontrado para %s, pulando...", publish_date
                 )
                 return
             raise
@@ -157,45 +158,43 @@ def process_daily_gazette_sync(publish_date: date):
 
         # Importar páginas no banco de busca
         diarios_dir = current_app.config.get("DIARIOS_DIR", "diarios")
-        os.makedirs(diarios_dir, exist_ok=True)
-        search_db = os.path.join(diarios_dir, "diarios.db")
+        Path(diarios_dir).mkdir(parents=True, exist_ok=True)
+        search_db = str(Path(diarios_dir) / "diarios.db")
         source = SearchSource(search_db)
 
         try:
-            current_app.logger.info(f"Importando {len(paginas)} páginas...")
+            current_app.logger.info("Importando %d páginas...", len(paginas))
             source.import_pages(paginas)
 
-            # Listar todas as configurações ativas (de todos os usuários) para notificação
+            # Listar configs ativas para notificação
             config_repo = SearchConfigRepository()
             search_service = SearchService(config_repo)
             configs = search_service.list_configs(active_only=True, user_id=None)
-            current_app.logger.info(f"Encontradas {len(configs)} configurações ativas")
+            current_app.logger.info("Encontradas %d configurações ativas", len(configs))
 
             # Processar notificações de forma síncrona (sem RQ)
             for config in configs:
                 try:
                     # Chamar função de notificação diretamente (síncrona)
-                    # notify_search_config espera app_context, então precisamos criar um
-                    # Mas como já estamos em um contexto, vamos chamar a lógica diretamente
                     notify_search_config_sync(publish_date, config.id)
                     current_app.logger.info(
-                        f"Notificação processada para config {config.id}"
+                        "Notificação processada para config %d", config.id
                     )
-                except Exception as e:
-                    current_app.logger.error(
-                        f"Erro ao processar notificação para config {config.id}: {e}"
+                except Exception:
+                    current_app.logger.exception(
+                        "Erro ao processar notificação para config %d", config.id
                     )
                     # Continuar com outras configurações mesmo se uma falhar
 
         finally:
             source.close()
 
-    except Exception as e:
-        current_app.logger.error(f"Erro ao processar diário: {e}", exc_info=True)
+    except Exception:
+        current_app.logger.exception("Erro ao processar diário")
         raise
 
 
-def notify_search_config_sync(publish_date: date, config_id: int):
+def notify_search_config_sync(publish_date: date, config_id: int) -> None:
     """
     Versão síncrona de notify_search_config (sem criar novo app context).
     Busca config sem filtro de usuário (process-daily já listou todas).
@@ -204,12 +203,12 @@ def notify_search_config_sync(publish_date: date, config_id: int):
     search_service = SearchService(config_repo)
     config = search_service.get_config(config_id, user_id=None)
     if not config:
-        current_app.logger.warning(f"Configuração {config_id} não encontrada")
+        current_app.logger.warning("Configuração %d não encontrada", config_id)
         return
 
     # Inicializar source de busca
     diarios_dir = current_app.config.get("DIARIOS_DIR", "diarios")
-    search_db = os.path.join(diarios_dir, "diarios.db")
+    search_db = str(Path(diarios_dir) / "diarios.db")
     source = SearchSource(search_db)
 
     try:
@@ -221,7 +220,7 @@ def notify_search_config_sync(publish_date: date, config_id: int):
 
         # Se não houver matches, pular
         if report.count == 0:
-            current_app.logger.info(f"Nenhum match encontrado para config {config_id}")
+            current_app.logger.info("Nenhum match encontrado para config %d", config_id)
             return
 
         # Enviar emails se configurado
@@ -238,10 +237,13 @@ def notify_search_config_sync(publish_date: date, config_id: int):
                     " com CSV anexado" if config.attach_csv and report.count > 0 else ""
                 )
                 current_app.logger.info(
-                    f"Email enviado para {config.mail_to} (config {config_id}){csv_info}"
+                    "Email enviado para %s (config %d)%s",
+                    config.mail_to,
+                    config_id,
+                    csv_info,
                 )
-            except Exception as e:
-                current_app.logger.error(f"Erro ao enviar email: {e}")
+            except Exception:
+                current_app.logger.exception("Erro ao enviar email")
                 # Não falhar o job por erro de email
 
     finally:

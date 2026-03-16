@@ -1,2 +1,1 @@
 """Blueprints da API."""
-

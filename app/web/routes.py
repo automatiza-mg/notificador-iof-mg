@@ -1,49 +1,58 @@
 """Rotas web para interface HTML."""
 
 import os
-from datetime import date
+from datetime import UTC, date, datetime
+from pathlib import Path
+from typing import Any
+
 from flask import (
     Blueprint,
+    current_app,
+    flash,
+    redirect,
     render_template,
     request,
-    redirect,
     url_for,
-    flash,
-    current_app,
 )
 from flask_login import current_user, login_required
 from pydantic import ValidationError
 
-from app.services.search_service import SearchService
-from app.repositories.search_config_repository import SearchConfigRepository
-from app.schemas.search_config import SearchConfigCreate, SearchConfigUpdate
-from app.search.source import SearchSource, Term, Trigger, Pagina as SearchPagina
 from app.iof.v1.consulta import consulta_por_data, convert_pages
 from app.mailer.mailer import Mailer
 from app.mailer.notification import notification_email
+from app.repositories.search_config_repository import SearchConfigRepository
+from app.schemas.search_config import SearchConfigCreate, SearchConfigUpdate
+from app.search.source import Pagina as SearchPagina
+from app.search.source import SearchSource, Term, Trigger
+from app.services.search_service import SearchService
 
 bp = Blueprint("web", __name__)
 
 
 # Helper para instanciar serviço
-def get_service():
+def get_service() -> SearchService:
     repository = SearchConfigRepository()
     return SearchService(repository)
 
 
 @bp.route("/")
 @login_required
-def index():
+def index() -> Any:
     """Lista todas as configurações do usuário logado."""
-    active_only = request.args.get("active_only", "true").lower() == "true"
+    active_only = request.args.get("active_only", "false").lower() == "true"
+    page = request.args.get("page", 1, type=int)
     service = get_service()
-    configs = service.list_configs(active_only=active_only, user_id=current_user.id)
-    return render_template("index.html", configs=configs, active_only=active_only)
+    configs_pagination = service.list_configs_paginated(
+        page=page, per_page=6, active_only=active_only, user_id=current_user.id
+    )
+    return render_template(
+        "index.html", configs=configs_pagination, active_only=active_only
+    )
 
 
 @bp.route("/configs/new", methods=["GET", "POST"])
 @login_required
-def create_config():
+def create_config() -> Any:
     """Criar nova configuração."""
     if request.method == "POST":
         data = request.form.to_dict()
@@ -83,12 +92,12 @@ def create_config():
 
         try:
             # Validar com Pydantic
-            config_create = SearchConfigCreate(**config_data)
+            config_create = SearchConfigCreate.model_validate(config_data)
             service = get_service()
-            config = service.save_config(config_create, user_id=current_user.id)
+            service.save_config(config_create, user_id=current_user.id)
 
             flash("Configuração criada com sucesso!", "success")
-            return redirect(url_for("web.detail_config", config_id=config.id))
+            return redirect(url_for("web.index"))
 
         except ValidationError as e:
             # Mapear erros do Pydantic para o template
@@ -108,8 +117,8 @@ def create_config():
 
             return render_template("create.html", errors=errors, form_data=config_data)
 
-        except Exception as e:
-            flash(f"Erro ao criar configuração: {str(e)}", "error")
+        except Exception as e:  # noqa: BLE001  # noqa: BLE001  # noqa: BLE001
+            flash(f"Erro ao criar configuração: {e!s}", "error")
             return render_template("create.html", errors={}, form_data=config_data)
 
     return render_template("create.html", errors={}, form_data={})
@@ -117,7 +126,7 @@ def create_config():
 
 @bp.route("/configs/<int:config_id>")
 @login_required
-def detail_config(config_id):
+def detail_config(config_id: int) -> Any:
     """Visualizar detalhes de uma configuração (apenas do dono)."""
     service = get_service()
     config = service.get_config(config_id, user_id=current_user.id)
@@ -130,7 +139,7 @@ def detail_config(config_id):
 
 @bp.route("/configs/<int:config_id>/edit", methods=["GET", "POST"])
 @login_required
-def edit_config(config_id):
+def edit_config(config_id: int) -> Any:
     """Editar configuração (apenas do dono)."""
     service = get_service()
     config = service.get_config(config_id, user_id=current_user.id)
@@ -176,16 +185,15 @@ def edit_config(config_id):
 
         try:
             # Validar com Pydantic
-            config_update = SearchConfigUpdate(**config_data)
+            config_update = SearchConfigUpdate.model_validate(config_data)
             updated_config = service.update_config(
                 config_id, config_update, user_id=current_user.id
             )
 
             if updated_config:
                 flash("Configuração atualizada com sucesso!", "success")
-                return redirect(url_for("web.detail_config", config_id=config_id))
-            else:
-                flash("Erro ao atualizar configuração", "error")
+                return redirect(url_for("web.index"))
+            flash("Erro ao atualizar configuração", "error")
 
         except ValidationError as e:
             # Mapear erros do Pydantic para o template
@@ -200,8 +208,8 @@ def edit_config(config_id):
                 "edit.html", config=config, errors=errors, form_data=config_data
             )
 
-        except Exception as e:
-            flash(f"Erro ao atualizar configuração: {str(e)}", "error")
+        except Exception as e:  # noqa: BLE001  # noqa: BLE001  # noqa: BLE001
+            flash(f"Erro ao atualizar configuração: {e!s}", "error")
 
     # Preparar dados do formulário
     form_data = {
@@ -220,7 +228,7 @@ def edit_config(config_id):
 
 @bp.route("/configs/<int:config_id>/delete", methods=["POST"])
 @login_required
-def delete_config(config_id):
+def delete_config(config_id: int) -> Any:
     """Deletar configuração (apenas do dono)."""
     service = get_service()
     deleted = service.delete_config(config_id, user_id=current_user.id)
@@ -231,9 +239,152 @@ def delete_config(config_id):
     return redirect(url_for("web.index"))
 
 
+def _render_backtest(
+    config: Any, result: dict[str, Any] | None = None, test_date: date | None = None
+) -> Any:
+    today = datetime.now(UTC).date()
+    return render_template(
+        "backtest.html",
+        config=config,
+        result=result,
+        test_date=test_date,
+        max_date=today.isoformat(),
+    )
+
+
+def _ensure_pages_exist(source: SearchSource, test_date: date) -> bool:
+    if source.has_pages(test_date):
+        return True
+    try:
+        response = consulta_por_data(test_date)
+        arquivo = response.dados.arquivo_caderno_principal.arquivo
+        paginas_iof = convert_pages(arquivo, test_date)
+        paginas = [
+            SearchPagina(
+                titulo="",
+                num_pagina=p.num_pagina,
+                descricao="",
+                conteudo=p.conteudo,
+                data_publicacao=p.data_publicacao,
+            )
+            for p in paginas_iof
+        ]
+        source.import_pages(paginas)
+    except Exception as e:  # noqa: BLE001
+        error_msg = str(e).lower()
+        if "not found" in error_msg or "404" in error_msg:
+            flash(f"Diário não encontrado para {test_date}", "error")
+        else:
+            flash(f"Erro ao baixar diário: {e!s}", "error")
+        return False
+    else:
+        flash(f"Diário de {test_date} baixado e importado com sucesso", "success")
+        return True
+
+
+def _get_valid_date(date_str: str | None) -> date | None:
+    if not date_str:
+        flash("Data é obrigatória", "error")
+        return None
+    try:
+        test_date = date.fromisoformat(date_str)
+    except ValueError:
+        flash("Data inválida. Use o formato YYYY-MM-DD", "error")
+        return None
+    if test_date > datetime.now(UTC).date():
+        flash("Não é possível testar datas futuras", "error")
+        return None
+    return test_date
+
+
+def _send_backtest_email(config: Any, report: Any) -> None:
+    mail_server = current_app.config.get("MAIL_SERVER", "")
+    mail_port = current_app.config.get("MAIL_PORT", 0)
+    current_app.config.get("MAIL_USE_TLS", False)
+    mail_username = current_app.config.get("MAIL_USERNAME", "")
+
+    if not mail_server:
+        flash(
+            "Configurações de email não estão definidas. "
+            "Configure MAIL_SMTP_HOST no arquivo .env para enviar emails. "
+            "Para desenvolvimento local, você pode usar MailHog (porta 1025) "
+            "ou configurar um servidor SMTP real (Gmail, SendGrid, etc.).",
+            "warning",
+        )
+        return
+    if not mail_username:
+        flash(
+            "MAIL_SMTP_USER não está configurado. "
+            "Configure no arquivo .env para enviar emails.",
+            "warning",
+        )
+        return
+
+    try:
+        mailer = Mailer(current_app)
+        subject = config.mail_subject or "Teste de Busca - Diário Oficial"
+        email = notification_email(
+            config.mail_to,
+            report,
+            subject=subject,
+            attach_csv=config.attach_csv,
+        )
+        mailer.send(email)
+        csv_info = " com CSV anexado" if config.attach_csv and report.count > 0 else ""
+        flash(
+            f"Email de teste enviado com sucesso para {len(config.mail_to)} "
+            f"destinatário(s)!{csv_info}",
+            "success",
+        )
+    except (ConnectionRefusedError, OSError) as e:
+        error_code = getattr(e, "errno", None)
+        if error_code == 61 or "Connection refused" in str(e) or "[Errno 61]" in str(e):
+            tls_hint = (
+                " Verifique também se MAIL_USE_TLS está configurado corretamente "
+                "(para Gmail na porta 587, deve ser true)."
+                if "gmail" in mail_server.lower()
+                else ""
+            )
+            flash(
+                f"Erro ao conectar ao servidor SMTP ({mail_server}:{mail_port}). "
+                f"O servidor não está acessível ou não está rodando.{tls_hint} "
+                "Verifique: 1) Se o servidor SMTP está acessível, "
+                "2) Se as configurações MAIL_SMTP_HOST e MAIL_SMTP_PORT estão corretas "
+                "no arquivo .env, 3) Se há firewall bloqueando a conexão.",
+                "error",
+            )
+        else:
+            flash(f"Erro de connection com o servidor SMTP: {e!s}", "error")
+    except Exception as e:  # noqa: BLE001
+        error_msg = str(e)
+        if (
+            "authentication" in error_msg.lower()
+            or "login" in error_msg.lower()
+            or "535" in error_msg
+        ):
+            flash(
+                "Erro de autenticação no servidor SMTP. Verifique se MAIL_SMTP_USER "
+                "e MAIL_SMTP_PASSWORD estão corretos no arquivo .env. Para Gmail, "
+                'certifique-se de usar uma "Senha de App" e não sua senha normal.',
+                "error",
+            )
+        elif "timeout" in error_msg.lower():
+            flash(
+                f"Timeout ao conectar ao servidor SMTP ({mail_server}:{mail_port}). "
+                "Verifique se o servidor está acessível e sua conexão com a internet.",
+                "error",
+            )
+        else:
+            flash(
+                f"Erro ao enviar email: {error_msg}. "
+                "Verifique as configurações de email no arquivo .env.",
+                "error",
+            )
+
+
 @bp.route("/configs/<int:config_id>/backtest", methods=["GET", "POST"])
 @login_required
-def backtest_config(config_id):
+def backtest_config(config_id: int) -> Any:
     """Página de backtest (apenas do dono)."""
     service = get_service()
     config = service.get_config(config_id, user_id=current_user.id)
@@ -241,242 +392,62 @@ def backtest_config(config_id):
         flash("Configuração não encontrada", "error")
         return redirect(url_for("web.index"))
 
-    # Verificar se backtest está habilitado
     app_env = os.getenv("APP_ENV", "development")
     if app_env != "development":
         flash("Backtest disponível apenas em ambiente de desenvolvimento", "error")
         return redirect(url_for("web.detail_config", config_id=config_id))
 
-    if request.method == "POST":
-        date_str = request.form.get("date")
-        if not date_str:
-            flash("Data é obrigatória", "error")
-            today = date.today()
-            return render_template(
-                "backtest.html",
-                config=config,
-                result=None,
-                test_date=None,
-                max_date=today.isoformat(),
-            )
+    if request.method != "POST":
+        return _render_backtest(config)
 
-        try:
-            test_date = date.fromisoformat(date_str)
-        except ValueError:
-            flash("Data inválida. Use o formato YYYY-MM-DD", "error")
-            today = date.today()
-            return render_template(
-                "backtest.html",
-                config=config,
-                result=None,
-                test_date=None,
-                max_date=today.isoformat(),
-            )
+    test_date = _get_valid_date(request.form.get("date"))
+    if not test_date:
+        return _render_backtest(config)
 
-        if test_date > date.today():
-            flash("Não é possível testar datas futuras", "error")
-            today = date.today()
-            return render_template(
-                "backtest.html",
-                config=config,
-                result=None,
-                test_date=None,
-                max_date=today.isoformat(),
-            )
+    diarios_dir = current_app.config.get("DIARIOS_DIR", "diarios")
+    Path(diarios_dir).mkdir(parents=True, exist_ok=True)
+    search_db = str(Path(diarios_dir) / "diarios.db")
+    source = SearchSource(search_db)
 
-        # Inicializar source de busca
-        diarios_dir = current_app.config.get("DIARIOS_DIR", "diarios")
-        os.makedirs(diarios_dir, exist_ok=True)
-        search_db = os.path.join(diarios_dir, "diarios.db")
-        source = SearchSource(search_db)
+    try:
+        if not _ensure_pages_exist(source, test_date):
+            return _render_backtest(config)
 
-        try:
-            # Verificar se já tem páginas importadas
-            has_pages = source.has_pages(test_date)
+        search_terms = [Term(term=t.term, exact=t.exact) for t in config.terms]
+        report = source.lookup(Trigger.BACKTEST, test_date, search_terms)
 
-            if not has_pages:
-                # Baixar e importar diário
-                try:
-                    response = consulta_por_data(test_date)
-                    arquivo = response.dados.arquivo_caderno_principal.arquivo
-                    paginas_iof = convert_pages(arquivo, test_date)
-                    # Converter para Pagina do search
-                    paginas = [
-                        SearchPagina(
-                            titulo="",
-                            num_pagina=p.num_pagina,
-                            descricao="",
-                            conteudo=p.conteudo,
-                            data_publicacao=p.data_publicacao,
-                        )
-                        for p in paginas_iof
-                    ]
-                    source.import_pages(paginas)
-                    flash(
-                        f"Diário de {test_date} baixado e importado com sucesso",
-                        "success",
-                    )
-                except Exception as e:
-                    source.close()
-                    error_msg = str(e).lower()
-                    if "not found" in error_msg or "404" in error_msg:
-                        flash(f"Diário não encontrado para {test_date}", "error")
-                    else:
-                        flash(f"Erro ao baixar diário: {str(e)}", "error")
-                    today = date.today()
-                    return render_template(
-                        "backtest.html",
-                        config=config,
-                        result=None,
-                        test_date=None,
-                        max_date=today.isoformat(),
-                    )
+        result = {
+            "publish_date": report.publish_date.isoformat(),
+            "highlights": [
+                {
+                    "page": h.page,
+                    "content": h.content,
+                    "term": h.term,
+                    "page_url": h.page_url,
+                }
+                for h in report.highlights
+            ],
+            "search_terms": [
+                {"term": t.term, "exact": t.exact} for t in report.search_terms
+            ],
+            "trigger": report.trigger.value,
+            "count": report.count,
+        }
 
-            # Converter termos da config para Term do search
-            search_terms = [
-                Term(term=term.term, exact=term.exact) for term in config.terms
-            ]
+        if report.count > 0 and config.mail_to:
+            _send_backtest_email(config, report)
 
-            # Executar busca
-            report = source.lookup(Trigger.BACKTEST, test_date, search_terms)
+        return _render_backtest(config, result=result, test_date=test_date)
 
-            # Converter report para dicionário
-            result = {
-                "publish_date": report.publish_date.isoformat(),
-                "highlights": [
-                    {
-                        "page": h.page,
-                        "content": h.content,
-                        "term": h.term,
-                        "page_url": h.page_url,
-                    }
-                    for h in report.highlights
-                ],
-                "search_terms": [
-                    {"term": t.term, "exact": t.exact} for t in report.search_terms
-                ],
-                "trigger": report.trigger.value,
-                "count": report.count,
-            }
-
-            # Enviar email se houver resultados e emails configurados
-            if report.count > 0 and config.mail_to:
-                # Verificar se as configurações de email estão definidas
-                mail_server = current_app.config.get("MAIL_SERVER", "")
-                mail_port = current_app.config.get("MAIL_PORT", 0)
-                mail_use_tls = current_app.config.get("MAIL_USE_TLS", False)
-                mail_username = current_app.config.get("MAIL_USERNAME", "")
-
-                if not mail_server:
-                    flash(
-                        "Configurações de email não estão definidas. Configure MAIL_SMTP_HOST no arquivo .env para enviar emails. Para desenvolvimento local, você pode usar MailHog (porta 1025) ou configurar um servidor SMTP real (Gmail, SendGrid, etc.).",
-                        "warning",
-                    )
-                elif not mail_username:
-                    flash(
-                        "MAIL_SMTP_USER não está configurado. Configure no arquivo .env para enviar emails.",
-                        "warning",
-                    )
-                else:
-                    try:
-                        mailer = Mailer(current_app)
-                        subject = (
-                            config.mail_subject or "Teste de Busca - Diário Oficial"
-                        )
-                        email = notification_email(
-                            config.mail_to,
-                            report,
-                            subject=subject,
-                            attach_csv=config.attach_csv,
-                        )
-                        mailer.send(email)
-                        csv_info = (
-                            " com CSV anexado"
-                            if config.attach_csv and report.count > 0
-                            else ""
-                        )
-                        flash(
-                            f"Email de teste enviado com sucesso para {len(config.mail_to)} destinatário(s)!{csv_info}",
-                            "success",
-                        )
-                    except (ConnectionRefusedError, OSError) as e:
-                        error_code = getattr(e, "errno", None)
-                        if (
-                            error_code == 61
-                            or "Connection refused" in str(e)
-                            or "[Errno 61]" in str(e)
-                        ):
-                            tls_hint = (
-                                f" Verifique também se MAIL_USE_TLS está configurado corretamente (para Gmail na porta 587, deve ser true)."
-                                if "gmail" in mail_server.lower()
-                                else ""
-                            )
-                            flash(
-                                f"Erro ao conectar ao servidor SMTP ({mail_server}:{mail_port}). O servidor não está acessível ou não está rodando.{tls_hint} Verifique: 1) Se o servidor SMTP está acessível, 2) Se as configurações MAIL_SMTP_HOST e MAIL_SMTP_PORT estão corretas no arquivo .env, 3) Se há firewall bloqueando a conexão.",
-                                "error",
-                            )
-                        else:
-                            flash(
-                                f"Erro de conexão com o servidor SMTP: {str(e)}",
-                                "error",
-                            )
-                    except Exception as e:
-                        error_msg = str(e)
-                        if (
-                            "authentication" in error_msg.lower()
-                            or "login" in error_msg.lower()
-                            or "535" in error_msg
-                        ):
-                            flash(
-                                f'Erro de autenticação no servidor SMTP. Verifique se MAIL_SMTP_USER e MAIL_SMTP_PASSWORD estão corretos no arquivo .env. Para Gmail, certifique-se de usar uma "Senha de App" e não sua senha normal.',
-                                "error",
-                            )
-                        elif "timeout" in error_msg.lower():
-                            flash(
-                                f"Timeout ao conectar ao servidor SMTP ({mail_server}:{mail_port}). Verifique se o servidor está acessível e sua conexão com a internet.",
-                                "error",
-                            )
-                        else:
-                            flash(
-                                f"Erro ao enviar email: {error_msg}. Verifique as configurações de email no arquivo .env.",
-                                "error",
-                            )
-
-            today = date.today()
-            return render_template(
-                "backtest.html",
-                config=config,
-                result=result,
-                test_date=test_date,
-                max_date=today.isoformat(),
-            )
-
-        except Exception as e:
-            current_app.logger.error(
-                f"Erro ao executar backtest: {str(e)}", exc_info=True
-            )
-            flash(f"Erro ao executar backtest: {str(e)}", "error")
-            today = date.today()
-            return render_template(
-                "backtest.html",
-                config=config,
-                result=None,
-                test_date=None,
-                max_date=today.isoformat(),
-            )
-        finally:
-            source.close()
-
-    today = date.today()
-    return render_template(
-        "backtest.html",
-        config=config,
-        result=None,
-        test_date=None,
-        max_date=today.isoformat(),
-    )
+    except Exception as e:
+        current_app.logger.exception("Erro ao executar backtest")
+        flash(f"Erro ao executar backtest: {e!s}", "error")
+        return _render_backtest(config)
+    finally:
+        source.close()
 
 
 # Registrar rotas de autenticação (login/logout)
 from app.web import auth  # noqa: E402
+
 auth.register(bp)

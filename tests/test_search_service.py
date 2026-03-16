@@ -1,16 +1,17 @@
 """Testes para SearchService (multi-tenant por user_id)."""
 
-import pytest
-from app.services.search_service import SearchService
+from typing import Any
+
 from app.repositories.search_config_repository import SearchConfigRepository
 from app.schemas.search_config import (
     SearchConfigCreate,
-    SearchTermBase,
     SearchConfigUpdate,
+    SearchTermBase,
 )
+from app.services.search_service import SearchService
 
 
-def test_create_config(app, test_user):
+def test_create_config(app: Any, test_user: Any) -> None:
     """Testa criação de configuração via serviço (com user_id)."""
     with app.app_context():
         repo = SearchConfigRepository()
@@ -18,6 +19,9 @@ def test_create_config(app, test_user):
 
         config_data = SearchConfigCreate(
             label="Service Test",
+            description="",
+            mail_subject="",
+            teams_webhook=None,
             terms=[SearchTermBase(term="unit test", exact=True)],
             mail_to=["unit@test.com"],
         )
@@ -31,14 +35,18 @@ def test_create_config(app, test_user):
         assert config.terms[0].term == "unit test"
 
 
-def test_update_config(app, sample_config, test_user):
+def test_update_config(app: Any, sample_config: Any, test_user: Any) -> None:
     """Testa atualização de configuração (com user_id para ownership)."""
     with app.app_context():
         repo = SearchConfigRepository()
         service = SearchService(repo)
 
         update_data = SearchConfigUpdate(
-            label="Updated Label", terms=[SearchTermBase(term="new term", exact=False)]
+            label="Updated Label",
+            description="updated",
+            mail_subject="",
+            mail_to=["unit@test.com"],
+            terms=[SearchTermBase(term="new term", exact=False)],
         )
 
         updated = service.update_config(
@@ -52,7 +60,7 @@ def test_update_config(app, sample_config, test_user):
         assert updated.terms[0].exact is False
 
 
-def test_list_configs(app, sample_config, test_user):
+def test_list_configs(app: Any, sample_config: Any, test_user: Any) -> None:
     """Testa listagem de configurações (filtrada por user_id)."""
     with app.app_context():
         repo = SearchConfigRepository()
@@ -64,7 +72,7 @@ def test_list_configs(app, sample_config, test_user):
         assert configs[0].user_id == test_user.id
 
 
-def test_delete_config(app, sample_config, test_user):
+def test_delete_config(app: Any, sample_config: Any, test_user: Any) -> None:
     """Testa deleção de configuração (com user_id para ownership)."""
     with app.app_context():
         repo = SearchConfigRepository()
@@ -74,7 +82,9 @@ def test_delete_config(app, sample_config, test_user):
         assert service.get_config(sample_config.id, user_id=test_user.id) is None
 
 
-def test_get_config_returns_none_for_other_user(app, sample_config, test_user_b):
+def test_get_config_returns_none_for_other_user(
+    app: Any, sample_config: Any, test_user_b: Any
+) -> None:
     """get_config com user_id de outro usuário retorna None (IDOR)."""
     with app.app_context():
         repo = SearchConfigRepository()

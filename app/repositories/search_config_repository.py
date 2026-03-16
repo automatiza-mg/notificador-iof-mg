@@ -1,6 +1,7 @@
 """Repositório para operações de banco de dados de SearchConfig."""
 
-from typing import List, Optional
+from typing import Any, cast
+
 from app.extensions import db
 from app.models.search_config import SearchConfig, SearchTerm
 
@@ -16,9 +17,9 @@ class SearchConfigRepository:
         return config
 
     def get_by_id(
-        self, config_id: int, user_id: Optional[int] = None
-    ) -> Optional[SearchConfig]:
-        """Busca uma configuração pelo ID. Se user_id for informado, só retorna se for dono."""
+        self, config_id: int, user_id: int | None = None
+    ) -> SearchConfig | None:
+        """Busca config por ID. Se user_id for passado, retorna só se for dono."""
         config = db.session.get(SearchConfig, config_id)
         if config is None:
             return None
@@ -27,15 +28,33 @@ class SearchConfigRepository:
         return config
 
     def find_all(
-        self, active_only: bool = True, user_id: Optional[int] = None
-    ) -> List[SearchConfig]:
-        """Lista configurações. Se user_id for informado, filtra por dono; senão lista todas."""
+        self, *, active_only: bool = True, user_id: int | None = None
+    ) -> list[SearchConfig]:
+        """Lista configs. Se user_id informado, filtra por dono; senão lista todas."""
         query = SearchConfig.query
         if user_id is not None:
             query = query.filter(SearchConfig.user_id == user_id)
         if active_only:
-            query = query.filter(SearchConfig.active == True)
-        return query.all()
+            query = query.filter(SearchConfig.active)
+        return cast("list[SearchConfig]", query.all())
+
+    def find_paginated(
+        self,
+        page: int,
+        per_page: int,
+        *,
+        active_only: bool = True,
+        user_id: int | None = None,
+    ) -> Any:
+        """Lista configs com paginação."""
+        query = SearchConfig.query
+        if user_id is not None:
+            query = query.filter(SearchConfig.user_id == user_id)
+        if active_only:
+            query = query.filter(SearchConfig.active)
+        return query.order_by(SearchConfig.created_at.desc()).paginate(
+            page=page, per_page=per_page, error_out=False
+        )
 
     def delete(self, config: SearchConfig) -> None:
         """Remove uma configuração do banco de dados."""
@@ -43,7 +62,7 @@ class SearchConfigRepository:
         db.session.commit()
 
     def add_term(self, term: SearchTerm) -> None:
-        """Adiciona um termo à sessão (requer commit posterior ou via save da config)."""
+        """Adiciona termo à sessão (requer commit posterior ou via save)."""
         db.session.add(term)
 
     def delete_terms_by_config_id(self, config_id: int) -> None:

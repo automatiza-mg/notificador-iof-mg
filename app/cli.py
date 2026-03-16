@@ -1,17 +1,19 @@
 """Comandos CLI do Flask (criar usuário, seed de teste)."""
 
 import click
+from flask import Flask
+
 from app.extensions import db
 from app.models import User
 
 
-def register_commands(app):
+def register_commands(app: Flask) -> None:
     """Registra comandos CLI no app."""
 
     @app.cli.command("create-user")
     @click.option("--email", required=True, help="E-mail do usuário")
     @click.option("--password", required=True, hide_input=True, prompt=True)
-    def create_user(email, password):
+    def create_user(email: str, password: str) -> None:
         """Cria um usuário local (auth_provider=local)."""
         with app.app_context():
             email = email.strip().lower()
@@ -32,7 +34,7 @@ def register_commands(app):
             click.echo(f"Usuário criado: {email} (id={user.id})")
 
     @app.cli.command("seed-test-users")
-    def seed_test_users():
+    def seed_test_users() -> None:
         """Cria 2 usuários de teste (apenas se ainda não existirem)."""
         with app.app_context():
             test_users = [
@@ -40,8 +42,8 @@ def register_commands(app):
                 ("teste2@exemplo.com", "senha123"),
             ]
             created = 0
-            for email, password in test_users:
-                email = email.strip().lower()
+            for email_raw, password in test_users:
+                email = email_raw.strip().lower()
                 if db.session.query(User).filter_by(email=email).first():
                     click.echo(f"Já existe: {email}")
                     continue

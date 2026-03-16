@@ -1,230 +1,281 @@
 // Funções JavaScript para gerenciar formulários e interações
 
-let termCount = 0;
-let emailCount = 0;
+let termsList = [];
+let emailsList = [];
 const MAX_TERMS = 5;
 const MAX_EMAILS = 5;
 
-// ========== GERENCIAMENTO DE TERMOS ==========
+// ========== RENDERIZAÇÃO E GERENCIAMENTO ==========
 
-function addSearchTerm(termValue = '', exactValue = false) {
-    if (termCount >= MAX_TERMS) {
-        alert(`Você pode adicionar no máximo ${MAX_TERMS} termos.`);
-        return;
-    }
-
+function renderTerms() {
     const container = document.getElementById('termsContainer');
     if (!container) return;
-
-    const termDiv = document.createElement('div');
-    termDiv.className = 'flex items-center gap-2 p-3 bg-gray-50 rounded-lg border border-gray-200';
-    termDiv.dataset.termIndex = termCount;
-
-    termDiv.innerHTML = `
-        <input type="text" name="term" value="${escapeHtml(termValue)}" 
-               placeholder="Digite o termo" required maxlength="255"
-               class="flex-1 px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-        <label class="flex items-center gap-2 cursor-pointer group relative">
-            <input type="checkbox" name="term_exact" ${exactValue ? 'checked' : ''} 
-                   class="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
-            <span class="text-sm text-gray-700">Exato</span>
-            <div class="absolute left-0 bottom-full mb-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded py-2 px-3 w-64 z-10 shadow-lg whitespace-normal">
-                <strong>Busca Exata:</strong> Encontra apenas o termo completo exatamente como escrito.<br><br>
-                <strong>Busca Parcial:</strong> Encontra o termo mesmo como parte de outras palavras.
+    
+    container.innerHTML = '';
+    
+    termsList.forEach((term, index) => {
+        const termDiv = document.createElement('div');
+        termDiv.className = 'flex items-center justify-between px-4 py-2 bg-white border border-gray-300 rounded-full mb-2 shadow-sm';
+        
+        // Input escondido real (usado só pro envio final pelo submit handler pra gente preencher os exacts globais depois)
+        // Por ora deixamos um data-term
+        
+        termDiv.innerHTML = `
+            <span class="text-sm text-gray-800 truncate flex-1 mr-4">${escapeHtml(term)}</span>
+            <div class="flex items-center gap-1.5 shrink-0">
+                <button type="button" onclick="editSearchTerm(${index})" class="w-8 h-8 flex items-center justify-center bg-gray-200 hover:bg-gray-300 rounded-full transition text-gray-600">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                </button>
+                <button type="button" onclick="removeSearchTerm(${index})" class="w-8 h-8 flex items-center justify-center bg-gray-200 hover:bg-gray-300 rounded-full transition text-gray-600">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                </button>
             </div>
-            <i class="fas fa-info-circle text-blue-500 text-xs cursor-help" title="Busca Exata: encontra apenas o termo completo. Busca Parcial: encontra o termo mesmo como parte de outras palavras."></i>
-        </label>
-        <button type="button" onclick="removeSearchTerm(${termCount})" 
-                class="text-red-600 hover:text-red-800 p-2 transition">
-            <i class="fas fa-times"></i>
-        </button>
-    `;
-
-    container.appendChild(termDiv);
-    termCount++;
-
+        `;
+        
+        container.appendChild(termDiv);
+    });
+    
     updateTermButtons();
 }
 
-function removeSearchTerm(index) {
-    const container = document.getElementById('termsContainer');
+function renderEmails() {
+    const container = document.getElementById('emailsContainer');
     if (!container) return;
+    
+    container.innerHTML = '';
+    
+    emailsList.forEach((email, index) => {
+        const emailDiv = document.createElement('div');
+        emailDiv.className = 'flex items-center justify-between px-4 py-2 bg-white border border-gray-300 rounded-full mb-2 shadow-sm';
+        
+        emailDiv.innerHTML = `
+            <span class="text-sm text-gray-800 truncate flex-1 mr-4">${escapeHtml(email)}</span>
+            <input type="hidden" name="mail_to" value="${escapeHtml(email)}">
+            <div class="flex items-center gap-1.5 shrink-0">
+                <button type="button" onclick="editEmail(${index})" class="w-8 h-8 flex items-center justify-center bg-gray-200 hover:bg-gray-300 rounded-full transition text-gray-600">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                </button>
+                <button type="button" onclick="removeEmailField(${index})" class="w-8 h-8 flex items-center justify-center bg-gray-200 hover:bg-gray-300 rounded-full transition text-gray-600">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                </button>
+            </div>
+        `;
+        
+        container.appendChild(emailDiv);
+    });
+    
+    updateEmailButtons();
+}
 
-    const termDiv = container.querySelector(`[data-term-index="${index}"]`);
-    if (termDiv) {
-        termDiv.remove();
-        termCount--;
-        updateTermButtons();
+// ========== ACOES DE TERMOS ==========
+
+function addSearchTermAction() {
+    const input = document.getElementById('newTerm');
+    if (!input) return;
+    
+    const termValue = input.value.trim();
+    if (!termValue) return;
+    
+    if (termsList.length >= MAX_TERMS) {
+        alert(`Você pode adicionar no máximo ${MAX_TERMS} termos.`);
+        return;
     }
+    
+    if (termsList.includes(termValue)) {
+        alert('Este termo já foi adicionado.');
+        return;
+    }
+    
+    termsList.push(termValue);
+    input.value = '';
+    renderTerms();
+}
+
+function removeSearchTerm(index) {
+    termsList.splice(index, 1);
+    renderTerms();
+}
+
+function editSearchTerm(index) {
+    const input = document.getElementById('newTerm');
+    if (!input) return;
+    
+    // Put term back in input
+    input.value = termsList[index];
+    input.focus();
+    
+    // Remove from list to allow re-adding
+    removeSearchTerm(index);
 }
 
 function updateTermButtons() {
     const addBtn = document.getElementById('addTermBtn');
-    const newTermInput = document.getElementById('newTerm');
+    const input = document.getElementById('newTerm');
     
-    if (addBtn) {
-        addBtn.disabled = termCount >= MAX_TERMS;
-    }
-    if (newTermInput) {
-        newTermInput.disabled = termCount >= MAX_TERMS;
-    }
+    if (addBtn) addBtn.disabled = termsList.length >= MAX_TERMS;
+    if (input) input.disabled = termsList.length >= MAX_TERMS;
 }
 
-// Event listener para adicionar termo
-document.addEventListener('DOMContentLoaded', function() {
-    const addTermBtn = document.getElementById('addTermBtn');
-    const newTermInput = document.getElementById('newTerm');
+// ========== ACOES DE EMAILS ==========
 
-    if (addTermBtn && newTermInput) {
-        addTermBtn.addEventListener('click', function() {
-            const termValue = newTermInput.value.trim();
-            if (termValue) {
-                addSearchTerm(termValue, false);
-                newTermInput.value = '';
-            }
-        });
-
-        newTermInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                addTermBtn.click();
-            }
-        });
-    }
-});
-
-// ========== GERENCIAMENTO DE EMAILS ==========
-
-function addEmailField(emailValue = '') {
-    if (emailCount >= MAX_EMAILS) {
+function addEmailAction() {
+    const input = document.getElementById('newEmail');
+    if (!input) return;
+    
+    const emailValue = input.value.trim();
+    if (!emailValue) return;
+    
+    if (emailsList.length >= MAX_EMAILS) {
         alert(`Você pode adicionar no máximo ${MAX_EMAILS} emails.`);
         return;
     }
-
-    const container = document.getElementById('emailsContainer');
-    if (!container) return;
-
-    const emailDiv = document.createElement('div');
-    emailDiv.className = 'flex items-center gap-2';
-    emailDiv.dataset.emailIndex = emailCount;
-
-    emailDiv.innerHTML = `
-        <input type="email" name="mail_to" value="${escapeHtml(emailValue)}" 
-               placeholder="email@exemplo.com" 
-               class="flex-1 px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-        <button type="button" onclick="removeEmailField(${emailCount})" 
-                class="text-red-600 hover:text-red-800 p-2 transition">
-            <i class="fas fa-times"></i>
-        </button>
-    `;
-
-    container.appendChild(emailDiv);
-    emailCount++;
-
-    updateEmailButtons();
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(emailValue)) {
+        alert('Por favor, insira um email válido.');
+        return;
+    }
+    
+    if (emailsList.includes(emailValue)) {
+        alert('Este email já foi adicionado.');
+        return;
+    }
+    
+    emailsList.push(emailValue);
+    input.value = '';
+    renderEmails();
 }
 
 function removeEmailField(index) {
-    const container = document.getElementById('emailsContainer');
-    if (!container) return;
+    emailsList.splice(index, 1);
+    renderEmails();
+}
 
-    const emailDiv = container.querySelector(`[data-email-index="${index}"]`);
-    if (emailDiv) {
-        emailDiv.remove();
-        emailCount--;
-        updateEmailButtons();
-    }
+function editEmail(index) {
+    const input = document.getElementById('newEmail');
+    if (!input) return;
+    
+    input.value = emailsList[index];
+    input.focus();
+    
+    removeEmailField(index);
 }
 
 function updateEmailButtons() {
     const addBtn = document.getElementById('addEmailBtn');
+    const input = document.getElementById('newEmail');
     
-    if (addBtn) {
-        addBtn.disabled = emailCount >= MAX_EMAILS;
-    }
+    if (addBtn) addBtn.disabled = emailsList.length >= MAX_EMAILS;
+    if (input) input.disabled = emailsList.length >= MAX_EMAILS;
 }
 
-// Event listener para adicionar email
+// ========== INITIALIZATION AND LISTENERS ==========
+
 document.addEventListener('DOMContentLoaded', function() {
-    const addEmailBtn = document.getElementById('addEmailBtn');
     
-    if (addEmailBtn) {
-        addEmailBtn.addEventListener('click', function() {
-            addEmailField('');
+    // Setup terms input
+    const addTermBtn = document.getElementById('addTermBtn');
+    const newTermInput = document.getElementById('newTerm');
+    
+    if (addTermBtn && newTermInput) {
+        addTermBtn.addEventListener('click', addSearchTermAction);
+        newTermInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                addSearchTermAction();
+            }
         });
     }
-});
 
-// ========== VALIDAÇÃO DE FORMULÁRIO ==========
-
-function validateForm() {
-    const form = document.getElementById('configForm');
-    if (!form) return true;
-
-    // Validar termos
-    const terms = form.querySelectorAll('input[name="term"]');
-    let hasValidTerm = false;
-    terms.forEach(term => {
-        if (term.value.trim()) {
-            hasValidTerm = true;
-        }
-    });
-
-    if (!hasValidTerm) {
-        alert('É necessário adicionar pelo menos um termo de busca.');
-        return false;
-    }
-
-    if (terms.length > MAX_TERMS) {
-        alert(`Máximo de ${MAX_TERMS} termos permitidos.`);
-        return false;
-    }
-
-    // Validar emails
-    const emails = form.querySelectorAll('input[name="mail_to"]');
-    const emailValues = Array.from(emails).map(e => e.value.trim()).filter(e => e);
+    // Setup emails input
+    const addEmailBtn = document.getElementById('addEmailBtn');
+    const newEmailInput = document.getElementById('newEmail');
     
-    if (emailValues.length > MAX_EMAILS) {
-        alert(`Máximo de ${MAX_EMAILS} emails permitidos.`);
-        return false;
-    }
-
-    // Validar formato de emails
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    for (const email of emailValues) {
-        if (!emailRegex.test(email)) {
-            alert(`Email inválido: ${email}`);
-            return false;
-        }
-    }
-
-    // Validar URL do Teams (se preenchida)
-    const teamsWebhook = form.querySelector('#teams_webhook');
-    if (teamsWebhook && teamsWebhook.value.trim()) {
-        try {
-            const url = new URL(teamsWebhook.value);
-            if (url.protocol !== 'https:') {
-                alert('O webhook do Teams deve ser uma URL HTTPS.');
-                return false;
+    if (addEmailBtn && newEmailInput) {
+        addEmailBtn.addEventListener('click', addEmailAction);
+        newEmailInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                addEmailAction();
             }
-        } catch (e) {
-            alert('URL do webhook do Teams inválida.');
-            return false;
-        }
+        });
     }
-
-    return true;
-}
-
-// Adicionar validação ao submit do formulário
-document.addEventListener('DOMContentLoaded', function() {
+    
+    // Prevent form submit on global enter if not inside a specific flow
     const form = document.getElementById('configForm');
     if (form) {
+        form.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+                e.preventDefault();
+            }
+        });
+        
+        // Final submit interception to build hidden fields
         form.addEventListener('submit', function(e) {
-            if (!validateForm()) {
+            
+            if (termsList.length === 0) {
+                alert('É necessário adicionar pelo menos um termo de busca.');
                 e.preventDefault();
                 return false;
             }
+
+            if (emailsList.length === 0) {
+                alert('É necessário adicionar pelo menos um email.');
+                e.preventDefault();
+                return false;
+            }
+            
+            // The type of search (exact or partial) is global now in our UI
+            // 0 means global Exact, 1 means global Partial (or whatever logic radio uses)
+            const isGlobalExact = document.getElementById('radioExata').checked;
+            
+            // Clean any previously generated hidden inputs just in case
+            document.querySelectorAll('.generated-hidden-term').forEach(el => el.remove());
+            
+            // Create hidden fields for each term to match backend expectation
+            termsList.forEach(term => {
+                const termInput = document.createElement('input');
+                termInput.type = 'hidden';
+                termInput.name = 'term';
+                termInput.value = term;
+                termInput.className = 'generated-hidden-term';
+                form.appendChild(termInput);
+                
+                const exactInput = document.createElement('input');
+                exactInput.type = 'hidden';
+                exactInput.name = 'term_exact';
+                exactInput.value = isGlobalExact ? 'on' : 'off';
+                exactInput.className = 'generated-hidden-term';
+                form.appendChild(exactInput);
+            });
+            
+            // UI Feedback para Submit
+            const submitBtn = document.getElementById('submitBtn');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = `
+                    <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white inline-block" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Processando...
+                `;
+                submitBtn.classList.add('opacity-75', 'cursor-not-allowed');
+            }
+            
+            return true;
         });
     }
 });
@@ -237,36 +288,33 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-function formatDate(dateString) {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('pt-BR');
-}
-
-// ========== BACKTEST ==========
-
-function executeBacktest(configId, date) {
-    const executeBtn = document.getElementById('executeBtn');
-    if (executeBtn) {
-        executeBtn.disabled = true;
-        executeBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Executando...';
+// Helper to be called from inline script in create/edit html
+function initializeForm(initialTermsData, initialEmailsData, isAllExact) {
+    // initialTermsData: [{term: "foo", exact: true}]
+    if (initialTermsData && initialTermsData.length > 0) {
+        termsList = initialTermsData.map(t => t.term);
+        // We set the radio based on the first term (since it's a global setting now)
+        if (initialTermsData.length > 0) {
+             const exactRadio = document.getElementById('radioExata');
+             const ampliadaRadio = document.getElementById('radioAmpliada');
+             
+             // Try to use parameter if provided, otherwise fallback to first term
+             const exactStatus = isAllExact !== undefined ? isAllExact : initialTermsData[0].exact;
+             
+             if(exactRadio && ampliadaRadio) {
+                 if(exactStatus) {
+                     exactRadio.checked = true;
+                 } else {
+                     ampliadaRadio.checked = true;
+                 }
+             }
+        }
     }
-
-    // O backtest será executado via POST do formulário
-    // Esta função pode ser usada para validação adicional se necessário
-    return true;
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-    const backtestForm = document.getElementById('backtestForm');
-    if (backtestForm) {
-        backtestForm.addEventListener('submit', function(e) {
-            const dateInput = document.getElementById('date');
-            if (!dateInput || !dateInput.value) {
-                e.preventDefault();
-                alert('Por favor, selecione uma data.');
-                return false;
-            }
-        });
+    
+    if (initialEmailsData && initialEmailsData.length > 0) {
+        emailsList = initialEmailsData;
     }
-});
+    
+    renderTerms();
+    renderEmails();
+}

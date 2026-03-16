@@ -63,3 +63,15 @@ diarios/
 # Alembic
 alembic.ini.bak
 
+
+# Arquivos de Apoio e Ferramentas (Design/Agentes)
+apoio-frontend/
+AGENTS.md
+
+# Tipagens e Stubs locais
+typings/
+
+# Caches extra
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/

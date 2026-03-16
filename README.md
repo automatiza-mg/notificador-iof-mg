@@ -422,44 +422,40 @@ Acesse: http://localhost:8000
 
 ---
 
-## ☁️ Deploy no Azure (App Service + ACR) + GitHub Actions (OIDC)
+## ☁️ Deploy na Azure (Hand-off para DevOps)
 
-Este repositório já inclui workflow de deploy por container:
+A infraestrutura foi desenhada para rodar em um **Azure App Service (Linux Web App for Containers)** utilizando uma imagem gerada via **Azure Container Registry (ACR)**. O deploy é totalmente contínuo via GitHub Actions usando **OIDC (Workload Identity Federation)**, eliminando a necessidade de secrets de senha.
 
-- `.github/workflows/deploy.yml`
-  - Build da imagem Docker
-  - Push para **Azure Container Registry (ACR)**
-  - Atualiza `linuxFxVersion` do App Service para apontar para a imagem (tag = SHA)
-  - Reinicia o Web App
+### 1. Recursos necessários na Azure
+O engenheiro de cloud precisará provisionar:
+1. **Resource Group**: Para agrupar todos os recursos.
+2. **Azure Container Registry (ACR)**: Para armazenar as imagens Docker.
+3. **App Service Plan (Linux)**: Plano de hospedagem (Ex: B1 ou P1v3).
+4. **Web App for Containers**: Onde o container irá rodar.
+5. *(Opcional)* **Azure Storage Account**: Caso decidam usar um File Share montado ao invés do `/home` nativo do App Service.
+6. *(Opcional)* **Azure Database for PostgreSQL**: Caso não queiram usar o SQLite no `/home`.
 
-### Secrets necessários no GitHub
+### 2. Configuração do OIDC (GitHub <-> Azure)
+No Entra ID (Azure AD), crie uma **User Assigned Managed Identity** (ou App Registration) e configure as credenciais federadas apontando para este repositório do GitHub (branch `main`). 
+Conceda a esta identidade as roles de `AcrPush` (no Container Registry) e `Website Contributor` (no Web App).
 
-Configure em **Settings → Secrets and variables → Actions**:
+### 3. Secrets do GitHub Actions
+Cadastre os seguintes repositórios em *Settings > Secrets and variables > Actions*:
+- `AZURE_CLIENT_ID`: Client ID da Managed Identity/App.
+- `AZURE_TENANT_ID`: Tenant ID do diretório.
+- `AZURE_SUBSCRIPTION_ID`: ID da Assinatura.
+- `AZURE_REGISTRY_NAME`: Nome do seu ACR (ex: `meuregistro`).
+- `AZURE_WEB_APP_NAME`: Nome do seu Web App.
+- `AZURE_RESOURCE_GROUP`: Nome do Resource Group do Web App.
 
-- `AZURE_WEB_APP_NAME`
-- `AZURE_RESOURCE_GROUP`
-- `AZURE_REGISTRY_NAME`
-- `AZURE_CLIENT_ID`
-- `AZURE_TENANT_ID`
-- `AZURE_SUBSCRIPTION_ID`
-
-### Variáveis de ambiente no App Service
-
-No **App Service → Configuration → Application settings**, configure (exemplos):
-
+### 4. Application Settings (Variáveis de Produção no Azure)
+No painel do Azure Web App, vá em **Environment Variables** e adicione:
 - `APP_ENV=production`
-- `API_KEY=...`
-- `MAIL_*` (SMTP)
-- `DATABASE_URL=sqlite:////home/instance/local.db` (ou Postgres)
+- `WEBSITES_ENABLE_APP_SERVICE_STORAGE=true` *(CRÍTICO: Garante que a pasta /home sobreviva a reboots)*
 - `DIARIOS_DIR=/home/diarios`
-
-E garanta:
-
-- `WEBSITES_ENABLE_APP_SERVICE_STORAGE=true` (para persistir `/home`)
-
-### Federated Credentials (OIDC)
-
-O repo contém `credential.json` / `credential-noslash.json` como referência do *subject* do GitHub Actions para configurar **Workload Identity Federation**.
+- `DATABASE_URL=sqlite:////home/instance/local.db`
+- `API_KEY=<token_seguro_para_o_cron>`
+- Todas as variáveis de SMTP (`MAIL_SMTP_HOST`, etc) e do Entra ID (`ENTRA_CLIENT_ID`, etc).
 
 ---
 

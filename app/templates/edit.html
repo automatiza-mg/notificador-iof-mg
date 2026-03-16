@@ -3,164 +3,222 @@
 {% block title %}Editar Configuração - Notificador IOF MG{% endblock %}
 
 {% block content %}
-<div class="mb-6">
-    <a href="{{ url_for('web.detail_config', config_id=config.id) }}" class="text-blue-600 hover:text-blue-800 mb-4 inline-block">
-        <i class="fas fa-arrow-left mr-2"></i>Voltar para detalhes
-    </a>
-    <h2 class="text-3xl font-bold text-gray-800">Editar Configuração: {{ config.label }}</h2>
-</div>
+<form method="POST" id="configForm" class="w-full max-w-6xl mx-auto">
+    <!-- Always submit attach_csv true -->
+    <input type="hidden" name="attach_csv" value="on">
 
-<form method="POST" id="configForm" class="space-y-6">
-    <!-- Seção 1: Dados Básicos -->
-    <div class="bg-white rounded-lg shadow-md p-6">
-        <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-            <i class="fas fa-book mr-2 text-blue-500"></i>Dados Básicos
-        </h3>
+    <!-- Cabeçalho Principal -->
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
+        <div>
+            <h2 class="text-[2rem] font-bold text-[#071932] mb-1">Editar cadastro de alerta</h2>
+            <p class="text-[1.05rem] text-gray-800">Configure seu alerta e seja notificado por email.</p>
+        </div>
         
-        <div class="space-y-4">
+        <div class="flex flex-col items-end gap-3">
+            <a href="{{ url_for('web.index') }}" class="flex items-center gap-2 px-4 py-2 bg-[#E2E8F0] hover:bg-[#CBD5E1] text-[#071932] rounded-lg font-bold transition mr-2">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                Voltar
+            </a>
+            
+            <!-- Toggle Ativar/Desativar -->
+            <label class="flex items-center cursor-pointer {% if form_data.get('active', config.active) %}bg-[#D1FAE5]{% else %}bg-[#FEE2E2]{% endif %} rounded-full pl-1 pr-4 py-1 h-8 transition-colors duration-300" id="toggleContainer">
+                <div class="relative flex items-center">
+                    <input type="checkbox" id="active" name="active" class="sr-only" {% if form_data.get('active', config.active) %}checked{% endif %}>
+                    
+                    <!-- Track -->
+                    <div class="block w-10 h-6 rounded-full transition-colors duration-300 {% if form_data.get('active', config.active) %}bg-[#059669]{% else %}bg-[#DC2626]{% endif %}" id="toggleTrack"></div>
+                    
+                    <!-- Knob -->
+                    <div class="absolute left-0.5 top-0.5 bg-white w-5 h-5 rounded-full shadow-sm transition-transform duration-300 ease-in-out {% if form_data.get('active', config.active) %}translate-x-4{% endif %}" id="toggleKnob"></div>
+                </div>
+                <span class="ml-3 text-xs font-bold {% if form_data.get('active', config.active) %}text-[#065F46]{% else %}text-[#991B1B]{% endif %} transition-colors" id="toggleLabel">
+                    {% if form_data.get('active', config.active) %}Ativo{% else %}Inativo{% endif %}
+                </span>
+            </label>
+        </div>
+    </div>
+
+    <!-- Grid do Formulário -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-x-16 gap-y-10">
+        
+        <!-- Coluna Esquerda: Termos -->
+        <div class="space-y-8">
+            
+            <!-- Nome do Alerta -->
             <div>
-                <label for="label" class="block text-sm font-medium text-gray-700 mb-2">
-                    Nome <span class="text-red-500">*</span>
-                </label>
-                <input type="text" id="label" name="label" value="{{ form_data.get('label', config.label) }}" 
-                       required maxlength="255" 
-                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 {% if errors.get('label') %}border-red-500{% endif %}">
+                <label for="label" class="block text-lg font-bold text-[#071932] mb-3">Nome do alerta</label>
+                <input type="text" id="label" name="label" value="{{ form_data.get('label', config.label) }}" required maxlength="255" 
+                       class="w-full px-5 py-3 bg-transparent border border-[#5C9FBD] rounded-full focus:outline-none focus:ring-2 focus:ring-[#5C9FBD] focus:border-transparent text-[#071932]">
                 {% if errors.get('label') %}
                 <p class="mt-1 text-sm text-red-600">{{ errors.label }}</p>
                 {% endif %}
             </div>
 
+            <!-- Adicionar Termos -->
             <div>
-                <label for="description" class="block text-sm font-medium text-gray-700 mb-2">
-                    Descrição
-                </label>
-                <textarea id="description" name="description" rows="3" maxlength="1000"
-                          class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">{{ form_data.get('description', config.description) }}</textarea>
-            </div>
-
-            <div class="flex items-center justify-between p-4 border border-gray-300 rounded-lg">
-                <div>
-                    <label for="active" class="text-sm font-medium text-gray-700">Configuração Ativa</label>
-                    <p class="text-xs text-gray-500">Desative para pausar as notificações desta configuração</p>
+                <label class="block text-lg font-bold text-[#071932] mb-3">Termo(s) que você quer monitorar</label>
+                <div class="flex gap-2 relative">
+                    <input type="text" id="newTerm" placeholder="" maxlength="255"
+                           class="w-full pl-5 pr-32 py-3 bg-transparent border border-[#5C9FBD] rounded-full focus:outline-none focus:ring-2 focus:ring-[#5C9FBD] text-[#071932]">
+                    <button type="button" id="addTermBtn" class="absolute right-1 top-1 bottom-1 bg-[#5C9FBD] hover:bg-[#4A859F] text-white px-5 rounded-full text-sm font-medium transition whitespace-nowrap">
+                        + Adicionar
+                    </button>
                 </div>
-                <input type="checkbox" id="active" name="active" 
-                       {% if form_data.get('active', config.active) %}checked{% endif %}
-                       class="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
             </div>
-        </div>
-    </div>
 
-    <!-- Seção 2: Termos de Busca -->
-    <div class="bg-white rounded-lg shadow-md p-6">
-        <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-            <i class="fas fa-search mr-2 text-blue-500"></i>Termos de Busca
-        </h3>
-        
-        <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <p class="text-sm text-blue-800">
-                <i class="fas fa-info-circle mr-2"></i>
-                <strong>Busca Exata:</strong> Encontra apenas o termo completo exatamente como escrito. 
-                <strong>Busca Parcial:</strong> Encontra o termo mesmo como parte de outras palavras.
-            </p>
-        </div>
-        
-        <div id="termsContainer" class="space-y-4">
-            <!-- Termos serão adicionados aqui via JavaScript -->
-        </div>
-
-        <div class="flex items-center gap-2 mt-4">
-            <input type="text" id="newTerm" placeholder="Digite um termo como seu nome, MASP, etc." 
-                   class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                   maxlength="255">
-            <button type="button" id="addTermBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition">
-                <i class="fas fa-plus mr-2"></i>Adicionar
-            </button>
-        </div>
-        {% if errors.get('terms') %}
-        <p class="mt-2 text-sm text-red-600">{{ errors.terms }}</p>
-        {% endif %}
-    </div>
-
-    <!-- Seção 3: Notificações Email -->
-    <div class="bg-white rounded-lg shadow-md p-6">
-        <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-            <i class="fas fa-envelope mr-2 text-blue-500"></i>Notificações Email
-        </h3>
-        
-        <div class="space-y-4">
+            <!-- Lista de Termos -->
             <div>
-                <label for="mail_subject" class="block text-sm font-medium text-gray-700 mb-2">
-                    Assunto do Email
+                <label class="block text-sm font-bold text-[#071932] mb-3">Termo(s) já adicionados:</label>
+                <div id="termsContainer" class="space-y-2">
+                    <!-- Termos populados via JS -->
+                </div>
+                {% if errors.get('terms') %}
+                <p class="mt-2 text-sm text-red-600">{{ errors.terms }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Configuração Global de Busca -->
+            <div class="space-y-4 pt-2">
+                <label class="flex items-start gap-3 cursor-pointer group">
+                    <div class="relative flex items-center justify-center mt-1">
+                        <input type="radio" name="global_search_type" id="radioExata" value="exact" class="peer sr-only" checked>
+                        <div class="w-5 h-5 rounded-full border-2 border-[#071932] flex items-center justify-center after:content-[''] after:w-2.5 after:h-2.5 after:bg-[#071932] after:rounded-full after:scale-0 peer-checked:after:scale-100 after:transition-transform"></div>
+                    </div>
+                    <div>
+                        <span class="block font-bold text-[#071932]">Busca Exata:</span>
+                        <span class="text-sm text-gray-800">Encontra somente o termo exatamente como foi digitado.</span>
+                    </div>
                 </label>
-                <input type="text" id="mail_subject" name="mail_subject" value="{{ form_data.get('mail_subject', config.mail_subject) }}" 
-                       maxlength="255"
-                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+
+                <label class="flex items-start gap-3 cursor-pointer group">
+                    <div class="relative flex items-center justify-center mt-1">
+                        <input type="radio" name="global_search_type" id="radioAmpliada" value="partial" class="peer sr-only">
+                        <div class="w-5 h-5 rounded-full border-2 border-[#071932] flex items-center justify-center after:content-[''] after:w-2.5 after:h-2.5 after:bg-[#071932] after:rounded-full after:scale-0 peer-checked:after:scale-100 after:transition-transform"></div>
+                    </div>
+                    <div>
+                        <span class="block font-bold text-[#071932]">Busca Ampliada:</span>
+                        <span class="text-sm text-gray-800">Encontra o termo mesmo com variações ou quando aparece dentro de outras palavras.</span>
+                    </div>
+                </label>
+            </div>
+            
+        </div>
+
+        <!-- Coluna Direita: Descrição e Emails -->
+        <div class="space-y-8">
+            
+            <!-- Descrição -->
+            <div>
+                <label for="description" class="block text-lg font-bold text-[#071932] mb-3">Descrição do alerta</label>
+                <input type="text" id="description" name="description" value="{{ form_data.get('description', config.description) }}" maxlength="1000"
+                       class="w-full px-5 py-3 bg-transparent border border-[#5C9FBD] rounded-full focus:outline-none focus:ring-2 focus:ring-[#5C9FBD] text-[#071932]">
             </div>
 
+            <!-- Assunto -->
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">Lista de Emails</label>
+                <label for="mail_subject" class="block text-lg font-bold text-[#071932] mb-3">Assunto do email</label>
+                <input type="text" id="mail_subject" name="mail_subject" value="{{ form_data.get('mail_subject', config.mail_subject) }}" maxlength="255"
+                       class="w-full px-5 py-3 bg-transparent border border-[#5C9FBD] rounded-full focus:outline-none focus:ring-2 focus:ring-[#5C9FBD] text-[#071932]">
+            </div>
+
+            <!-- Adicionar Emails -->
+            <div>
+                <label class="block text-lg font-bold text-[#071932] mb-3">Destinatário(s) do email:</label>
+                <div class="flex gap-2 relative">
+                    <input type="email" id="newEmail" placeholder="" maxlength="255"
+                           class="w-full pl-5 pr-32 py-3 bg-transparent border border-[#5C9FBD] rounded-full focus:outline-none focus:ring-2 focus:ring-[#5C9FBD] text-[#071932]">
+                    <button type="button" id="addEmailBtn" class="absolute right-1 top-1 bottom-1 bg-[#5C9FBD] hover:bg-[#4A859F] text-white px-5 rounded-full text-sm font-medium transition whitespace-nowrap">
+                        + Adicionar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Lista de Emails -->
+            <div>
+                <label class="block text-sm font-bold text-[#071932] mb-3">Email(s) já adicionados:</label>
                 <div id="emailsContainer" class="space-y-2">
-                    <!-- Emails serão adicionados aqui via JavaScript -->
+                    <!-- Emails populados via JS -->
                 </div>
-                <button type="button" id="addEmailBtn" class="mt-2 bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg transition text-sm">
-                    <i class="fas fa-plus mr-2"></i>Adicionar Email
-                </button>
                 {% if errors.get('mail_to') %}
                 <p class="mt-2 text-sm text-red-600">{{ errors.mail_to }}</p>
                 {% endif %}
             </div>
 
-            <div class="flex items-center justify-between p-4 border border-gray-300 rounded-lg">
-                <div>
-                    <label for="attach_csv" class="text-sm font-medium text-gray-700">Anexar CSV</label>
-                    <p class="text-xs text-gray-500">Selecione essa opção para enviar o CSV em anexo no email de notificação</p>
-                </div>
-                <input type="checkbox" id="attach_csv" name="attach_csv" 
-                       {% if form_data.get('attach_csv', config.attach_csv) %}checked{% endif %}
-                       class="w-5 h-5 text-blue-600 border-gray-300 rounded focus:ring-blue-500">
-            </div>
         </div>
+
     </div>
 
-    <!-- Botões de Ação -->
-    <div class="flex justify-end gap-4">
-        <a href="{{ url_for('web.detail_config', config_id=config.id) }}" class="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition">
-            Cancelar
+    <!-- Botões de Ação Inferiores -->
+    <div class="flex flex-col sm:flex-row justify-center items-center gap-6 mt-16 mb-8">
+        <a href="{{ url_for('web.backtest_config', config_id=config.id) }}" class="w-full sm:w-auto min-w-[160px] text-center bg-[#5C9FBD] hover:bg-[#4A859F] text-white font-bold py-3.5 px-8 rounded-full shadow-md uppercase tracking-wide transition">
+            TESTAR
         </a>
-        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg shadow-md transition">
-            <i class="fas fa-save mr-2"></i>Salvar Alterações
+        <a href="{{ url_for('web.index') }}" class="w-full sm:w-auto min-w-[160px] text-center bg-[#A0AEC0] hover:bg-gray-500 text-white font-bold py-3.5 px-8 rounded-full shadow-md uppercase tracking-wide transition">
+            CANCELAR
+        </a>
+        <button type="submit" class="w-full sm:w-auto min-w-[160px] text-center bg-[#071932] hover:bg-[#152B44] text-white font-bold py-3.5 px-8 rounded-full shadow-md uppercase tracking-wide transition">
+            SALVAR
         </button>
     </div>
+
 </form>
 
+{% endblock %}
+
+{% block scripts %}
 <script>
-// Aguardar DOM estar pronto
 document.addEventListener('DOMContentLoaded', function() {
-    // Inicializar termos e emails do formulário
-    const initialTerms = {{ form_data.get('terms', [])|tojson }};
-    const initialEmails = {{ form_data.get('mail_to', [])|tojson }};
-
-    // Resetar contadores
-    termCount = 0;
-    emailCount = 0;
-
-    // Carregar termos iniciais
-    if (initialTerms && initialTerms.length > 0) {
-        initialTerms.forEach(term => {
-            addSearchTerm(term.term, term.exact);
+    // Custom logic for the toggle switch UI
+    const activeCheckbox = document.getElementById('active');
+    const toggleKnob = document.getElementById('toggleKnob');
+    const toggleTrack = document.getElementById('toggleTrack');
+    const toggleContainer = document.getElementById('toggleContainer');
+    const toggleLabel = document.getElementById('toggleLabel');
+    
+    if (activeCheckbox && toggleKnob) {
+        activeCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                toggleKnob.classList.add('translate-x-4');
+                toggleTrack.classList.remove('bg-[#DC2626]');
+                toggleTrack.classList.add('bg-[#059669]');
+                toggleContainer.classList.remove('bg-[#FEE2E2]');
+                toggleContainer.classList.add('bg-[#D1FAE5]');
+                if(toggleLabel) {
+                    toggleLabel.textContent = 'Ativo';
+                    toggleLabel.classList.remove('text-[#991B1B]');
+                    toggleLabel.classList.add('text-[#065F46]');
+                }
+            } else {
+                toggleKnob.classList.remove('translate-x-4');
+                toggleTrack.classList.remove('bg-[#059669]');
+                toggleTrack.classList.add('bg-[#DC2626]');
+                toggleContainer.classList.remove('bg-[#D1FAE5]');
+                toggleContainer.classList.add('bg-[#FEE2E2]');
+                if(toggleLabel) {
+                    toggleLabel.textContent = 'Inativo';
+                    toggleLabel.classList.remove('text-[#065F46]');
+                    toggleLabel.classList.add('text-[#991B1B]');
+                }
+            }
         });
-    } else {
-        addSearchTerm('', false);
     }
 
-    // Carregar emails iniciais
-    if (initialEmails && initialEmails.length > 0) {
-        initialEmails.forEach(email => {
-            addEmailField(email);
-        });
-    } else {
-        addEmailField('');
+    // Initialize terms and emails
+    const rawTerms = {{ form_data.get('terms', [])|tojson }};
+    const rawEmails = {{ form_data.get('mail_to', [])|tojson }};
+    
+    // We determine the global exact mode based on what's passed. 
+    // In edit, if all terms are exact, global is exact.
+    // If there is any non-exact term, global falls to partial (ampliada)
+    let isGlobalExact = true;
+    if (rawTerms && rawTerms.length > 0) {
+        isGlobalExact = rawTerms.every(t => t.exact === true);
     }
+    
+    initializeForm(rawTerms, rawEmails, isGlobalExact);
 });
 </script>
 {% endblock %}

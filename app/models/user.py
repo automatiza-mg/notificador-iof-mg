@@ -1,8 +1,8 @@
 """Modelo de usuário para autenticação e multi-tenancy."""
 
-from __future__ import annotations
+from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 
-from datetime import datetime, timezone
 from flask_login import UserMixin
 from sqlalchemy import DateTime, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -10,22 +10,33 @@ from werkzeug.security import check_password_hash, generate_password_hash
 
 from app.extensions import db
 
+if TYPE_CHECKING:
+    from app.models.search_config import SearchConfig
 
-def get_now_utc():
+
+def get_now_utc() -> datetime:
     """Retorna o datetime atual em UTC."""
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
-class User(UserMixin, db.Model):
+class User(UserMixin, db.Model):  # type: ignore[name-defined,misc]
     """Usuário do sistema (autenticação local ou Entra ID)."""
 
     __tablename__ = "users"
-    __table_args__ = (UniqueConstraint("auth_provider", "external_subject", name="uq_users_provider_subject"),)
+    __table_args__ = (
+        UniqueConstraint(
+            "auth_provider", "external_subject", name="uq_users_provider_subject"
+        ),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False, index=True)
+    email: Mapped[str] = mapped_column(
+        String(255), unique=True, nullable=False, index=True
+    )
     password_hash: Mapped[str | None] = mapped_column(Text, nullable=True)
-    auth_provider: Mapped[str] = mapped_column(String(32), nullable=False, default="local")
+    auth_provider: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="local"
+    )
     external_subject: Mapped[str | None] = mapped_column(String(255), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, default=get_now_utc

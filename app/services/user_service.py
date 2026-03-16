@@ -15,4 +15,4 @@ def can_register_new_user() -> bool:
     ser criados no primeiro login; a partir do 101º, bloquear criação
     (mostrar "limite atingido"), mas permitir login dos já cadastrados.
     """
-    return User.query.filter_by(auth_provider="entra").count() < USER_CAP_ENTRA
+    return bool(User.query.filter_by(auth_provider="entra").count() < USER_CAP_ENTRA)

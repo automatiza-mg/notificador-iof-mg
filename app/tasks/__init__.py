@@ -1,2 +1,1 @@
 """Tarefas assíncronas (workers RQ)."""
-

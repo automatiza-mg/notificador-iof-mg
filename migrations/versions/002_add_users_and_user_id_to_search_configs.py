@@ -5,10 +5,10 @@ Revises: 001
 Create Date: 2025-02-04
 
 """
-from sqlalchemy import inspect
-from alembic import op
-import sqlalchemy as sa
 
+import sqlalchemy as sa
+from alembic import op
+from sqlalchemy import inspect
 
 revision = "002"
 down_revision = "001"
@@ -27,9 +27,19 @@ def upgrade() -> None:
             sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
             sa.Column("email", sa.String(length=255), nullable=False),
             sa.Column("password_hash", sa.Text(), nullable=True),
-            sa.Column("auth_provider", sa.String(length=32), nullable=False, server_default="local"),
+            sa.Column(
+                "auth_provider",
+                sa.String(length=32),
+                nullable=False,
+                server_default="local",
+            ),
             sa.Column("external_subject", sa.String(length=255), nullable=True),
-            sa.Column("created_at", sa.DateTime(timezone=True), nullable=False, server_default=sa.text("CURRENT_TIMESTAMP")),
+            sa.Column(
+                "created_at",
+                sa.DateTime(timezone=True),
+                nullable=False,
+                server_default=sa.text("CURRENT_TIMESTAMP"),
+            ),
             sa.PrimaryKeyConstraint("id"),
         )
         op.create_index(op.f("ix_users_email"), "users", ["email"], unique=True)
@@ -59,9 +69,13 @@ def upgrade() -> None:
             # SQLite não suporta ADD COLUMN com FK em ALTER; usar apenas Integer
             op.add_column(
                 "search_configs",
-                sa.Column("user_id", sa.Integer(), nullable=False, server_default=sa.text("1")),
+                sa.Column(
+                    "user_id", sa.Integer(), nullable=False, server_default=sa.text("1")
+                ),
             )
-        existing_indexes = [idx["name"] for idx in inspector.get_indexes("search_configs")]
+        existing_indexes = [
+            idx["name"] for idx in inspector.get_indexes("search_configs")
+        ]
         if "ix_search_configs_user_id_active" not in existing_indexes:
             op.create_index(
                 "ix_search_configs_user_id_active",
