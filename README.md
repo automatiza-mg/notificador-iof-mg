@@ -91,7 +91,8 @@ uv run flask run
 - **SQLAlchemy + Alembic** (persistência das configurações)
 - **SQLite FTS5** (índice de busca do conteúdo do Diário Oficial)
 - **Poppler-utils** (`pdfinfo`, `pdftotext`) para extração de texto de PDF
-- **Flask-Mail** para envio de e-mails
+- **Azure Communication Services Email** para envio em produção
+- **Flask-Mail / SMTP** para desenvolvimento local
 - **Redis + RQ** (opcional) para processamento assíncrono
 - **Docker + Gunicorn** para produção
 
@@ -171,14 +172,20 @@ DATABASE_URL=sqlite:///instance/local.db
 # PostgreSQL (exemplo):
 # DATABASE_URL=postgresql+psycopg://USER:PASSWORD@HOST:5432/DBNAME
 
-# SMTP / Email
-MAIL_FROM_ADDRESS=seu-email@gmail.com
-MAIL_SMTP_HOST=smtp.gmail.com
-MAIL_SMTP_PORT=587
-MAIL_USE_TLS=true
+# Email
+MAIL_PROVIDER=azure
+AZURE_EMAIL_ENDPOINT=https://automatiza-comms.brazil.communication.azure.com/
+AZURE_EMAIL_SENDER_ADDRESS=DoNotReply@SEU-DOMINIO.azurecomm.net
+AZURE_COMMUNICATION_CONNECTION_STRING=endpoint=https://automatiza-comms.brazil.communication.azure.com/;accesskey=troque-esta-chave
+
+# SMTP (dev/local)
+MAIL_FROM_ADDRESS=noreply@local
+MAIL_SMTP_HOST=localhost
+MAIL_SMTP_PORT=1025
+MAIL_USE_TLS=false
 MAIL_USE_SSL=false
-MAIL_SMTP_USER=seu-email@gmail.com
-MAIL_SMTP_PASSWORD=sua-senha-de-app
+MAIL_SMTP_USER=
+MAIL_SMTP_PASSWORD=
 
 # Redis (opcional - para RQ)
 REDIS_URL=redis://localhost:6379/0
@@ -190,23 +197,33 @@ GUNICORN_WORKERS=2
 LOG_LEVEL=info
 ```
 
-### SMTP – exemplos rápidos
+### Email – provedores suportados
 
-#### Gmail (recomendado)
-- Use **Senha de App** (não a senha normal da conta).
-- Porta recomendada: **587** com **TLS**.
+#### Azure Email (produção)
+- Provider padrão em `APP_ENV=production`.
+- Requer:
+  - `MAIL_PROVIDER=azure`
+  - `AZURE_EMAIL_ENDPOINT`
+  - `AZURE_EMAIL_SENDER_ADDRESS`
+  - `AZURE_COMMUNICATION_CONNECTION_STRING`
 
-#### MailHog (dev/local)
-- Suba o MailHog e aponte para `localhost:1025`.
+#### SMTP / Flask-Mail (dev/local)
+- Provider padrão em `development`.
+- Use MailHog para desenvolvimento local:
 
 ```env
+MAIL_PROVIDER=smtp
 MAIL_SMTP_HOST=localhost
 MAIL_SMTP_PORT=1025
 MAIL_USE_TLS=false
 MAIL_USE_SSL=false
 MAIL_SMTP_USER=
 MAIL_SMTP_PASSWORD=
+MAIL_FROM_ADDRESS=noreply@local
 ```
+
+#### Gmail (fallback de desenvolvimento)
+- Use **Senha de App** e mantenha isso apenas fora da produção.
 
 ---
 
@@ -398,12 +415,10 @@ mkdir -p ./_data/diarios ./_data/instance
 docker run --rm -p 8000:8000 \
   -e APP_ENV=production \
   -e API_KEY=seu_token \
-  -e MAIL_SMTP_HOST=smtp.gmail.com \
-  -e MAIL_SMTP_PORT=587 \
-  -e MAIL_USE_TLS=true \
-  -e MAIL_SMTP_USER=seu-email@gmail.com \
-  -e MAIL_SMTP_PASSWORD=sua-senha-de-app \
-  -e MAIL_FROM_ADDRESS=seu-email@gmail.com \
+  -e MAIL_PROVIDER=azure \
+  -e AZURE_EMAIL_ENDPOINT=https://automatiza-comms.brazil.communication.azure.com/ \
+  -e AZURE_EMAIL_SENDER_ADDRESS=DoNotReply@SEU-DOMINIO.azurecomm.net \
+  -e AZURE_COMMUNICATION_CONNECTION_STRING='endpoint=https://automatiza-comms.brazil.communication.azure.com/;accesskey=SEU_ACCESS_KEY' \
   -e DIARIOS_DIR=/home/diarios \
   -e DATABASE_URL=sqlite:////home/instance/local.db \
   -v "$(pwd)/_data/diarios:/home/diarios" \
@@ -455,7 +470,11 @@ No painel do Azure Web App, vá em **Environment Variables** e adicione:
 - `DIARIOS_DIR=/home/diarios`
 - `DATABASE_URL=sqlite:////home/instance/local.db`
 - `API_KEY=<token_seguro_para_o_cron>`
-- Todas as variáveis de SMTP (`MAIL_SMTP_HOST`, etc) e do Entra ID (`ENTRA_CLIENT_ID`, etc).
+- `MAIL_PROVIDER=azure`
+- `AZURE_EMAIL_ENDPOINT=<endpoint-do-acs>`
+- `AZURE_EMAIL_SENDER_ADDRESS=<sender-address-autorizado>`
+- `AZURE_COMMUNICATION_CONNECTION_STRING=<connection-string-do-acs>`
+- Variáveis do Entra ID (`ENTRA_CLIENT_ID`, etc)
 
 ---
 
@@ -472,9 +491,11 @@ No painel do Azure Web App, vá em **Environment Variables** e adicione:
 
 ### 1) E-mail não envia
 
-- Verifique `MAIL_SMTP_HOST`, `MAIL_SMTP_PORT`, `MAIL_SMTP_USER`, `MAIL_SMTP_PASSWORD`.
+- Em produção (`MAIL_PROVIDER=azure`), verifique `AZURE_EMAIL_ENDPOINT`, `AZURE_EMAIL_SENDER_ADDRESS` e `AZURE_COMMUNICATION_CONNECTION_STRING`.
+- Confirme que o `AZURE_EMAIL_SENDER_ADDRESS` pertence ao domínio provisionado no Azure Communication Services.
+- Em desenvolvimento (`MAIL_PROVIDER=smtp`), verifique `MAIL_SMTP_HOST`, `MAIL_SMTP_PORT`, `MAIL_SMTP_USER` e `MAIL_SMTP_PASSWORD`.
 - Gmail: use **Senha de App** e `MAIL_USE_TLS=true` na porta **587**.
-- Teste via Backtest (em `development`) para validar SMTP rapidamente.
+- Teste via Backtest para validar o provider configurado rapidamente.
 
 ### 2) Diário não encontrado
 

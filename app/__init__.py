@@ -38,7 +38,8 @@ def create_app(config_name: str | None = None) -> Flask:
 
     # Inicializar extensões
     db.init_app(app)
-    mail.init_app(app)
+    if app.config.get("MAIL_PROVIDER") == "smtp":
+        mail.init_app(app)
     login_manager.init_app(app)
     login_manager.login_view = "web.login"
     login_manager.session_protection = "basic"

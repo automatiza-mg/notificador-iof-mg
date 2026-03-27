@@ -298,30 +298,14 @@ def _get_valid_date(date_str: str | None) -> date | None:
 
 
 def _send_backtest_email(config: Any, report: Any) -> None:
-    mail_server = current_app.config.get("MAIL_SERVER", "")
-    mail_port = current_app.config.get("MAIL_PORT", 0)
-    current_app.config.get("MAIL_USE_TLS", False)
-    mail_username = current_app.config.get("MAIL_USERNAME", "")
-
-    if not mail_server:
-        flash(
-            "Configurações de email não estão definidas. "
-            "Configure MAIL_SMTP_HOST no arquivo .env para enviar emails. "
-            "Para desenvolvimento local, você pode usar MailHog (porta 1025) "
-            "ou configurar um servidor SMTP real (Gmail, SendGrid, etc.).",
-            "warning",
-        )
-        return
-    if not mail_username:
-        flash(
-            "MAIL_SMTP_USER não está configurado. "
-            "Configure no arquivo .env para enviar emails.",
-            "warning",
-        )
-        return
-
+    provider_name = str(current_app.config.get("MAIL_PROVIDER", "smtp"))
     try:
         mailer = Mailer(current_app)
+        config_error = mailer.validate_configuration()
+        if config_error:
+            flash(config_error, "warning")
+            return
+
         subject = config.mail_subject or "Teste de Busca - Diário Oficial"
         email = notification_email(
             config.mail_to,
@@ -329,14 +313,19 @@ def _send_backtest_email(config: Any, report: Any) -> None:
             subject=subject,
             attach_csv=config.attach_csv,
         )
-        mailer.send(email)
+        results = mailer.send(email)
         csv_info = " com CSV anexado" if config.attach_csv and report.count > 0 else ""
+        message_id = results[0].message_id if results else None
+        provider_info = f" via {provider_name.upper()}"
+        message_id_info = f" (id {message_id})" if message_id else ""
         flash(
             f"Email de teste enviado com sucesso para {len(config.mail_to)} "
-            f"destinatário(s)!{csv_info}",
+            f"destinatário(s)!{csv_info}{provider_info}{message_id_info}",
             "success",
         )
     except (ConnectionRefusedError, OSError) as e:
+        mail_server = current_app.config.get("MAIL_SERVER", "")
+        mail_port = current_app.config.get("MAIL_PORT", 0)
         error_code = getattr(e, "errno", None)
         if error_code == 61 or "Connection refused" in str(e) or "[Errno 61]" in str(e):
             tls_hint = (
@@ -357,7 +346,30 @@ def _send_backtest_email(config: Any, report: Any) -> None:
             flash(f"Erro de connection com o servidor SMTP: {e!s}", "error")
     except Exception as e:  # noqa: BLE001
         error_msg = str(e)
-        if (
+        if provider_name == "azure":
+            error_msg_lower = error_msg.lower()
+            if "sender" in error_msg_lower or "domain" in error_msg_lower:
+                flash(
+                    "Erro ao enviar via Azure Email. Verifique se "
+                    "AZURE_EMAIL_SENDER_ADDRESS pertence ao domínio configurado no "
+                    "Azure Communication Services.",
+                    "error",
+                )
+            elif (
+                "connection string" in error_msg_lower
+                or "credential" in error_msg_lower
+            ):
+                flash(
+                    "Erro de autenticação no Azure Email. Verifique "
+                    "AZURE_COMMUNICATION_CONNECTION_STRING e AZURE_EMAIL_ENDPOINT.",
+                    "error",
+                )
+            else:
+                flash(
+                    f"Erro ao enviar email via Azure Email: {error_msg}",
+                    "error",
+                )
+        elif (
             "authentication" in error_msg.lower()
             or "login" in error_msg.lower()
             or "535" in error_msg

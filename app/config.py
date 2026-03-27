@@ -5,6 +5,13 @@ import os
 from pathlib import Path
 
 
+def _resolve_mail_provider(app_env: str) -> str:
+    provider = os.getenv("MAIL_PROVIDER", "").strip().lower()
+    if provider:
+        return provider
+    return "azure" if app_env == "production" else "smtp"
+
+
 class Config:
     """Configuração base."""
 
@@ -39,6 +46,12 @@ class Config:
     IOF_PASSWORD = os.getenv("IOF_PASSWORD", "")
 
     # Email
+    MAIL_PROVIDER = _resolve_mail_provider(APP_ENV)
+    AZURE_EMAIL_ENDPOINT = os.getenv("AZURE_EMAIL_ENDPOINT", "")
+    AZURE_EMAIL_SENDER_ADDRESS = os.getenv("AZURE_EMAIL_SENDER_ADDRESS", "")
+    AZURE_COMMUNICATION_CONNECTION_STRING = os.getenv(
+        "AZURE_COMMUNICATION_CONNECTION_STRING", ""
+    )
     MAIL_SERVER = os.getenv("MAIL_SMTP_HOST", "")
     MAIL_PORT = int(os.getenv("MAIL_SMTP_PORT", "587"))
     # Para Gmail na porta 587, TLS é obrigatório
@@ -89,6 +102,8 @@ class Config:
 class DevelopmentConfig(Config):
     """Configuração para desenvolvimento."""
 
+    APP_ENV = "development"
+    MAIL_PROVIDER = _resolve_mail_provider(APP_ENV)
     DEBUG = True
     TESTING = False
 
@@ -96,6 +111,8 @@ class DevelopmentConfig(Config):
 class ProductionConfig(Config):
     """Configuração para produção."""
 
+    APP_ENV = "production"
+    MAIL_PROVIDER = _resolve_mail_provider(APP_ENV)
     DEBUG = False
     TESTING = False
 
@@ -103,6 +120,8 @@ class ProductionConfig(Config):
 class TestingConfig(Config):
     """Configuração para testes."""
 
+    APP_ENV = "testing"
+    MAIL_PROVIDER = _resolve_mail_provider(APP_ENV)
     DEBUG = True
     TESTING = True
     DATABASE_URL = "sqlite:///:memory:"

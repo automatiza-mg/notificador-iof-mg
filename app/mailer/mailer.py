@@ -1,29 +1,11 @@
-"""Cliente de email para envio de notificações."""
+"""Fachada para envio de emails usando providers configuráveis."""
 
-from dataclasses import dataclass
 from typing import Any
 
-from flask_mail import Message
-
-
-@dataclass
-class Attachment:
-    """Estrutura de anexo de email."""
-
-    filename: str
-    content: bytes
-    content_type: str = "application/octet-stream"
-
-
-@dataclass
-class Email:
-    """Estrutura de email."""
-
-    to: list[str]
-    subject: str
-    text: str
-    html: str | None = None
-    attachments: list[Attachment] | None = None
+from app.mailer.azure_provider import AzureEmailProvider
+from app.mailer.message import DeliveryResult, Email
+from app.mailer.provider import EmailProvider
+from app.mailer.smtp_provider import SmtpEmailProvider
 
 
 class Mailer:
@@ -37,67 +19,29 @@ class Mailer:
             app: Instância do Flask app (opcional, pode usar current_app)
         """
         self.app = app
-        self._mail: Any = None
+        self._provider: EmailProvider | None = None
 
-    def _get_mail(self) -> Any:
-        """Obtém a instância do Mail, usando a já inicializada no app se disponível."""
-        if self._mail is None:
-            from flask import current_app, has_app_context  # noqa: PLC0415
+    @property
+    def provider_name(self) -> str:
+        """Nome do provider atualmente configurado."""
+        provider_name = str(self._get_app().config.get("MAIL_PROVIDER", "smtp")).strip()
+        return provider_name.lower() or "smtp"
 
-            app_to_use = self.app or (current_app if has_app_context() else None)
+    def validate_configuration(self) -> str | None:
+        """Valida a configuração do provider atual."""
+        return self._get_provider().validate_configuration()
 
-            if app_to_use:
-                # Usar a instância já inicializada do mail no app
-                from app.extensions import mail  # noqa: PLC0415
-
-                self._mail = mail
-            else:
-                raise RuntimeError(
-                    "Mailer não inicializado. Requer contexto de aplicação Flask."
-                )
-
-        return self._mail
-
-    def send(self, *emails: Email) -> None:
+    def send(self, *emails: Email) -> list[DeliveryResult]:
         """
         Envia um ou mais emails.
 
         Args:
             *emails: Emails para enviar
 
-        Raises:
-            RuntimeError: Se houver erro ao enviar
+        Returns:
+            Metadados de envio retornados pelo provider
         """
-        mail = self._get_mail()
-
-        messages = []
-        for email in emails:
-            _recipients: list[str | tuple[str, str]] = []
-            _recipients.extend(email.to)
-            msg = Message(
-                subject=email.subject,
-                recipients=_recipients,
-                body=email.text,
-                html=email.html,
-            )
-
-            # Adicionar anexos se houver
-            if email.attachments:
-                for attachment in email.attachments:
-                    msg.attach(
-                        filename=attachment.filename,
-                        content_type=attachment.content_type,
-                        data=attachment.content,
-                    )
-
-            messages.append(msg)
-
-        try:
-            with mail.connect() as conn:
-                for msg in messages:
-                    conn.send(msg)
-        except Exception as e:
-            raise RuntimeError(f"Erro ao enviar email: {e}") from e
+        return self._get_provider().send(*emails)
 
     def send_test_email(self, to: str) -> None:
         """
@@ -112,3 +56,28 @@ class Mailer:
             text="Este é um email de teste do sistema de notificações.",
         )
         self.send(email)
+
+    def _get_app(self) -> Any:
+        from flask import current_app, has_app_context  # noqa: PLC0415
+
+        app_to_use = self.app or (current_app if has_app_context() else None)
+        if app_to_use is None:
+            raise RuntimeError(
+                "Mailer não inicializado. Requer contexto de aplicação Flask."
+            )
+        return app_to_use
+
+    def _get_provider(self) -> EmailProvider:
+        if self._provider is None:
+            app = self._get_app()
+            provider_name = self.provider_name
+            if provider_name == "azure":
+                self._provider = AzureEmailProvider(app)
+            elif provider_name == "smtp":
+                self._provider = SmtpEmailProvider(app)
+            else:
+                raise RuntimeError(
+                    f"Provider de email desconhecido: {provider_name}. "
+                    "Use 'azure' ou 'smtp'."
+                )
+        return self._provider

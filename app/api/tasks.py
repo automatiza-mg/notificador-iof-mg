@@ -232,15 +232,18 @@ def notify_search_config_sync(publish_date: date, config_id: int) -> None:
             )
 
             try:
-                mailer.send(email)
+                results = mailer.send(email)
                 csv_info = (
                     " com CSV anexado" if config.attach_csv and report.count > 0 else ""
                 )
+                message_id = results[0].message_id if results else None
                 current_app.logger.info(
-                    "Email enviado para %s (config %d)%s",
+                    "Email enviado via %s para %s (config %d)%s%s",
+                    mailer.provider_name,
                     config.mail_to,
                     config_id,
                     csv_info,
+                    f" [message_id={message_id}]" if message_id else "",
                 )
             except Exception:
                 current_app.logger.exception("Erro ao enviar email")

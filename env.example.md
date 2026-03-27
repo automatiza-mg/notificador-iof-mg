@@ -84,23 +84,31 @@ DIARIOS_DIR=diarios
 
 
 # --------------------------------------------------------------
-# EMAIL (SMTP) — FLASK-MAIL
+# EMAIL — AZURE EM PRODUÇÃO / SMTP EM DESENVOLVIMENTO
 # --------------------------------------------------------------
+# Provider de envio: azure (produção) | smtp (desenvolvimento)
+MAIL_PROVIDER=azure
+
+# Azure Communication Services Email (produção)
+AZURE_EMAIL_ENDPOINT=https://automatiza-comms.brazil.communication.azure.com/
+AZURE_EMAIL_SENDER_ADDRESS=DoNotReply@SEU-DOMINIO.azurecomm.net
+AZURE_COMMUNICATION_CONNECTION_STRING=endpoint=https://automatiza-comms.brazil.communication.azure.com/;accesskey=troque-esta-chave
+
+# SMTP (desenvolvimento local / fallback)
 # Endereço do remetente (From)
 MAIL_FROM_ADDRESS=seu-email@exemplo.com
 
 # Host/porta do servidor SMTP
-MAIL_SMTP_HOST=smtp.gmail.com
-MAIL_SMTP_PORT=587
+MAIL_SMTP_HOST=localhost
+MAIL_SMTP_PORT=1025
 
 # TLS/SSL
-# Gmail na porta 587 => TLS true, SSL false
-MAIL_USE_TLS=true
+MAIL_USE_TLS=false
 MAIL_USE_SSL=false
 
 # Credenciais SMTP
-MAIL_SMTP_USER=seu-email@gmail.com
-MAIL_SMTP_PASSWORD=sua-senha-de-app
+MAIL_SMTP_USER=
+MAIL_SMTP_PASSWORD=
 
 
 # --------------------------------------------------------------
@@ -217,8 +225,34 @@ No portal Azure (Entra): registre um aplicativo, defina a redirect URI e use o c
 
 ---
 
-### 2.6 SMTP / Email
-O app usa **Flask-Mail** e as variáveis abaixo:
+### 2.6 Email
+O app suporta dois providers:
+
+- **Azure Communication Services Email** em produção
+- **SMTP/Flask-Mail** em desenvolvimento local
+
+#### Provider selecionado
+- **`MAIL_PROVIDER`**: define o provider de email (`azure` ou `smtp`).
+- Se não for definido explicitamente, o app usa `azure` em `production` e `smtp` nos demais ambientes.
+
+#### Azure Communication Services Email (produção)
+- **`AZURE_EMAIL_ENDPOINT`**: endpoint do recurso ACS.
+- **`AZURE_EMAIL_SENDER_ADDRESS`**: remetente autorizado no domínio do ACS.
+- **`AZURE_COMMUNICATION_CONNECTION_STRING`**: connection string do recurso de comunicação.
+
+Exemplo:
+
+```env
+MAIL_PROVIDER=azure
+AZURE_EMAIL_ENDPOINT=https://automatiza-comms.brazil.communication.azure.com/
+AZURE_EMAIL_SENDER_ADDRESS=DoNotReply@291ec9eb-c86f-49d0-9a0c-ff2e079089f7.azurecomm.net
+AZURE_COMMUNICATION_CONNECTION_STRING=endpoint=https://automatiza-comms.brazil.communication.azure.com/;accesskey=SEU_ACCESS_KEY
+```
+
+> 🔐 Recomendação: use App Settings ou Key Vault para armazenar a connection string. Se a chave tiver sido exposta em prints ou chats, faça rotação imediatamente.
+
+#### SMTP / Flask-Mail (desenvolvimento)
+Variáveis usadas quando `MAIL_PROVIDER=smtp`:
 
 - `MAIL_FROM_ADDRESS`
 - `MAIL_SMTP_HOST`
@@ -228,23 +262,11 @@ O app usa **Flask-Mail** e as variáveis abaixo:
 - `MAIL_SMTP_USER`
 - `MAIL_SMTP_PASSWORD`
 
-#### Gmail (recomendado)
-- Use **Senha de App** (App Password), não a senha normal.
-- Config típica:
-
-```env
-MAIL_SMTP_HOST=smtp.gmail.com
-MAIL_SMTP_PORT=587
-MAIL_USE_TLS=true
-MAIL_USE_SSL=false
-MAIL_SMTP_USER=seu-email@gmail.com
-MAIL_SMTP_PASSWORD=senha-de-app
-```
-
 #### MailHog (somente desenvolvimento)
 Ideal para testar emails sem enviar de verdade.
 
 ```env
+MAIL_PROVIDER=smtp
 MAIL_SMTP_HOST=localhost
 MAIL_SMTP_PORT=1025
 MAIL_USE_TLS=false
@@ -254,16 +276,18 @@ MAIL_SMTP_PASSWORD=
 MAIL_FROM_ADDRESS=noreply@local
 ```
 
-#### SendGrid (exemplo)
+#### Gmail (desenvolvimento ou contingência local)
+- Use **Senha de App** (App Password), não a senha normal.
 
 ```env
-MAIL_SMTP_HOST=smtp.sendgrid.net
+MAIL_PROVIDER=smtp
+MAIL_SMTP_HOST=smtp.gmail.com
 MAIL_SMTP_PORT=587
 MAIL_USE_TLS=true
 MAIL_USE_SSL=false
-MAIL_SMTP_USER=apikey
-MAIL_SMTP_PASSWORD=SEU_TOKEN_SENDGRID
-MAIL_FROM_ADDRESS=seu-email@dominio.com
+MAIL_SMTP_USER=seu-email@gmail.com
+MAIL_SMTP_PASSWORD=senha-de-app
+MAIL_FROM_ADDRESS=seu-email@gmail.com
 ```
 
 ---
@@ -350,4 +374,3 @@ E habilite:
 - ✅ Nunca commitar `.env` com segredos.
 - ✅ Em produção, rotacione `API_KEY` e `SECRET_KEY`.
 - ✅ Se usar Postgres, use SSL/Network restrictions e segredo via Key Vault/App Settings.
-

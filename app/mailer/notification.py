@@ -6,7 +6,7 @@ from datetime import date
 from jinja2 import Template
 
 from app.mailer.csv_generator import generate_csv_from_report, get_csv_filename
-from app.mailer.mailer import Attachment, Email
+from app.mailer.message import Attachment, Email
 from app.search.source import Report
 
 
