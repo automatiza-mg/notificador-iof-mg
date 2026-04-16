@@ -39,7 +39,6 @@ def config_to_dict(config: SearchConfig) -> dict[str, Any]:
     return {
         "id": config.id,
         "label": config.label,
-        "description": config.description,
         "attach_csv": config.attach_csv,
         "mail_to": config.mail_to,
         "mail_subject": config.mail_subject,
@@ -149,6 +148,7 @@ def backtest_config(config_id: int) -> tuple[Any, int]:
 
         # Obter data do query string
         date_str = request.args.get("date")
+        test_date: date | None = None
         error_dict = None
         if not date_str:
             error_dict = {"date": "Parâmetro date é obrigatório"}
@@ -162,6 +162,8 @@ def backtest_config(config_id: int) -> tuple[Any, int]:
 
         if error_dict:
             return validation_error(error_dict)
+        if test_date is None:
+            return validation_error({"date": "Data inválida"})
 
         # Inicializar source de busca e processar
         try:

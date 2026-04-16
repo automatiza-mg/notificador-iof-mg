@@ -11,7 +11,8 @@ import pytest
 
 from app.mailer.mailer import Mailer
 from app.mailer.message import Attachment, Email
-from app.mailer.notification import notification_email
+from app.mailer.notification import build_notification_emails, notification_email
+from app.models.search_config import SearchConfig
 from app.search.source import Highlight, Report, Term, Trigger
 
 
@@ -197,3 +198,27 @@ def test_notification_email_includes_csv_attachment() -> None:
 
     assert email.attachments is not None
     assert email.attachments[0].filename.endswith(".csv")
+
+
+def test_build_notification_emails_uses_individual_recipients(app: Any) -> None:
+    with app.app_context():
+        app.config["APP_BASE_URL"] = ""
+        config = SearchConfig(
+            user_id=1,
+            label="Alerta teste",
+            mail_to=["um@example.com", "dois@example.com"],
+            mail_subject="",
+            attach_csv=False,
+            active=True,
+        )
+        config.id = 99
+
+        emails = build_notification_emails(
+            config=config,
+            report=_build_report(),
+            secret_key=str(app.config["SECRET_KEY"]),
+            app_base_url="",
+            app_env="testing",
+        )
+
+    assert [email.to for email in emails] == [["um@example.com"], ["dois@example.com"]]

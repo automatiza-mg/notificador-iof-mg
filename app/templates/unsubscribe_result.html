@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}Descadastro de email - Notificador IOF MG{% endblock %}
+
+{% block content %}
+<div class="min-h-[70vh] flex items-center justify-center px-4">
+    <div class="w-full max-w-2xl rounded-[2rem] border border-[#071932] bg-white px-8 py-10 shadow-[0_10px_30px_rgba(0,0,0,0.08)] text-center">
+        <div class="mb-6 flex justify-center">
+            {% if status == 'success' %}
+                <div class="flex h-20 w-20 items-center justify-center rounded-full bg-[#D1FAE5] text-[#059669]">
+                    <svg class="h-10 w-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                    </svg>
+                </div>
+            {% elif status == 'warning' %}
+                <div class="flex h-20 w-20 items-center justify-center rounded-full bg-[#FEF3C7] text-[#B45309]">
+                    <svg class="h-10 w-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M10.29 3.86L1.82 18A2 2 0 0 0 3.53 21h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                        <line x1="12" y1="9" x2="12" y2="13"></line>
+                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                    </svg>
+                </div>
+            {% else %}
+                <div class="flex h-20 w-20 items-center justify-center rounded-full bg-[#E2E8F0] text-[#475569]">
+                    <svg class="h-10 w-10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                    </svg>
+                </div>
+            {% endif %}
+        </div>
+
+        <h1 class="mb-4 text-3xl font-bold text-[#071932]">{{ title }}</h1>
+        <p class="mx-auto max-w-xl text-[1.05rem] leading-relaxed text-[#334155]">
+            {{ message }}
+        </p>
+
+        {% if config %}
+        <div class="mt-8 rounded-2xl bg-[#F8FAFC] px-6 py-5 text-left border border-[#E2E8F0]">
+            <p class="text-sm font-semibold uppercase tracking-wide text-[#64748B] mb-2">Alerta</p>
+            <p class="text-lg font-bold text-[#071932]">{{ config.label }}</p>
+            {% if email %}
+            <p class="mt-3 text-sm text-[#475569]">Email afetado: <strong>{{ email }}</strong></p>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <div class="mt-8">
+            <a href="{{ url_for('web.login') }}" class="inline-flex items-center justify-center rounded-full bg-[#071932] px-8 py-3 text-sm font-bold uppercase tracking-wide text-white transition hover:bg-[#152B44]">
+                Voltar ao sistema
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}{% endblock %}

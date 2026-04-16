@@ -22,29 +22,50 @@
             <div class="flex items-start justify-between mb-4">
                 <div class="flex-1 pr-4">
                     <h3 class="text-[1.35rem] font-bold text-[#071932] mb-1">{{ config.label }}</h3>
-                    {% if config.description %}
-                    <p class="text-[#64748B] text-sm">{{ config.description }}</p>
-                    {% endif %}
                 </div>
-                <span class="px-4 py-1.5 text-sm font-medium rounded-full {% if config.active %}bg-[#D1FAE5] text-[#065F46]{% else %}bg-[#FEE2E2] text-[#991B1B]{% endif %}">
-                    {% if config.active %}Ativo{% else %}Inativo{% endif %}
-                </span>
+                <form method="POST" action="{{ url_for('web.toggle_config_active', config_id=config.id) }}" class="m-0 js-toggle-active-form">
+                    <input type="hidden" name="page" value="{{ configs.page }}">
+                    <label class="flex items-center cursor-pointer {% if config.active %}bg-[#D1FAE5]{% else %}bg-[#FEE2E2]{% endif %} rounded-full pl-1 pr-4 py-1 h-8 transition-colors duration-300">
+                        <div class="relative flex items-center">
+                            <input type="checkbox" name="active" class="sr-only js-toggle-active-checkbox" {% if config.active %}checked{% endif %}>
+                            <div class="block w-10 h-6 rounded-full transition-colors duration-300 {% if config.active %}bg-[#059669]{% else %}bg-[#DC2626]{% endif %}"></div>
+                            <div class="absolute left-0.5 top-0.5 bg-white w-5 h-5 rounded-full shadow-sm transition-transform duration-300 ease-in-out {% if config.active %}translate-x-4{% endif %}"></div>
+                        </div>
+                        <span class="ml-3 text-xs font-bold {% if config.active %}text-[#065F46]{% else %}text-[#991B1B]{% endif %} transition-colors">
+                            {% if config.active %}Ativo{% else %}Inativo{% endif %}
+                        </span>
+                    </label>
+                </form>
             </div>
 
             <div class="space-y-3 mb-8 mt-4 text-[0.95rem] text-[#334155] flex-grow">
-                <div class="flex items-center">
-                    <svg class="w-4 h-4 text-[#5C9FBD] mr-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="11" cy="11" r="8"></circle>
-                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-                    </svg>
-                    <span><strong>{{ config.terms|length }}</strong> termo(s) de busca configurado(s)</span>
+                <div>
+                    <div class="flex items-center">
+                        <svg class="w-4 h-4 text-[#5C9FBD] mr-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                        <span><strong>{{ config.terms|length }}</strong> termo(s) de busca configurado(s)</span>
+                    </div>
+                    <p class="mt-2 pl-7 text-sm text-[#64748B] break-words">
+                        {% for term in config.terms %}
+                            {{ term.term }}{% if not loop.last %}, {% endif %}
+                        {% endfor %}
+                    </p>
                 </div>
-                <div class="flex items-center">
-                    <svg class="w-4 h-4 text-[#5C9FBD] mr-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-                        <polyline points="22,6 12,13 2,6"></polyline>
-                    </svg>
-                    <span><strong>{{ config.mail_to|length }}</strong> email(s) configurado(s)</span>
+                <div>
+                    <div class="flex items-center">
+                        <svg class="w-4 h-4 text-[#5C9FBD] mr-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                            <polyline points="22,6 12,13 2,6"></polyline>
+                        </svg>
+                        <span><strong>{{ config.mail_to|length }}</strong> email(s) configurado(s)</span>
+                    </div>
+                    <p class="mt-2 pl-7 text-sm text-[#64748B] break-all">
+                        {% for email in config.mail_to %}
+                            {{ email }}{% if not loop.last %}, {% endif %}
+                        {% endfor %}
+                    </p>
                 </div>
             </div>
 
@@ -133,7 +154,6 @@
     </div>
 {% else %}
     <div class="flex flex-col items-center justify-center pt-24 pb-32 text-center">
-        <img src="{{ url_for('static', filename='img/alert_triangle.png') }}" alt="Aviso" class="mb-4 w-12 opacity-80">
         <h3 class="text-base font-normal text-gray-800 mb-1">Nenhum alerta cadastrado ainda</h3>
         <p class="text-xs text-gray-500">Clique em "Cadastrar Novo Alerta" para configurar</p>
     </div>
@@ -148,6 +168,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const modalBackdrop = document.getElementById('modalBackdrop');
     const cancelBtn = document.getElementById('cancelDeleteBtn');
     const confirmBtn = document.getElementById('confirmDeleteBtn');
+    const toggleForms = document.querySelectorAll('.js-toggle-active-form');
     
     let currentFormToSubmit = null;
 
@@ -194,6 +215,17 @@ document.addEventListener('DOMContentLoaded', function() {
         if (currentFormToSubmit) {
             currentFormToSubmit.submit();
         }
+    });
+
+    toggleForms.forEach(form => {
+        const checkbox = form.querySelector('.js-toggle-active-checkbox');
+        if (!checkbox) {
+            return;
+        }
+
+        checkbox.addEventListener('change', function() {
+            form.submit();
+        });
     });
 });
 </script>

@@ -18,6 +18,7 @@ class Config:
     # Aplicação
     APP_NAME = os.getenv("APP_NAME", "notificador-iof-mg")
     APP_ENV = os.getenv("APP_ENV", "development")
+    APP_BASE_URL = os.getenv("APP_BASE_URL", "")
     CLIENT_URL = os.getenv("CLIENT_URL", "http://localhost:5173")
     DIARIOS_DIR = os.getenv("DIARIOS_DIR", "diarios")
 

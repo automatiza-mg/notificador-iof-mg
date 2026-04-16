@@ -173,6 +173,7 @@ DATABASE_URL=sqlite:///instance/local.db
 # DATABASE_URL=postgresql+psycopg://USER:PASSWORD@HOST:5432/DBNAME
 
 # Email
+APP_BASE_URL=http://localhost:5000
 MAIL_PROVIDER=azure
 AZURE_EMAIL_ENDPOINT=https://automatiza-comms.brazil.communication.azure.com/
 AZURE_EMAIL_SENDER_ADDRESS=DoNotReply@SEU-DOMINIO.azurecomm.net
@@ -202,10 +203,13 @@ LOG_LEVEL=info
 #### Azure Email (produção)
 - Provider padrão em `APP_ENV=production`.
 - Requer:
+  - `APP_BASE_URL`
   - `MAIL_PROVIDER=azure`
   - `AZURE_EMAIL_ENDPOINT`
   - `AZURE_EMAIL_SENDER_ADDRESS`
   - `AZURE_COMMUNICATION_CONNECTION_STRING`
+- Os emails de alerta incluem um link individual de descadastro no rodapé.
+- Se o último destinatário for removido por esse link, o alerta é inativado automaticamente.
 
 #### SMTP / Flask-Mail (dev/local)
 - Provider padrão em `development`.
@@ -298,7 +302,6 @@ Rotas principais:
 1. Acesse a página inicial e clique em **“Nova Configuração”**.
 2. Informe:
    - Nome
-   - Descrição (opcional)
    - Termos (até 5)
    - Destinatários (até 5)
    - (Opcional) **Anexar CSV**

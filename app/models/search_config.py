@@ -74,7 +74,6 @@ class SearchConfig(db.Model):  # type: ignore[name-defined,misc]
         Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
     )
     label: Mapped[str] = mapped_column(String(255), nullable=False)
-    description: Mapped[str] = mapped_column(Text, nullable=False, default="")
     attach_csv: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     mail_to: Mapped[list[str]] = mapped_column(ListType, nullable=False, default=list)
     mail_subject: Mapped[str] = mapped_column(String(255), nullable=False, default="")

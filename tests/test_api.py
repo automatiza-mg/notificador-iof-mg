@@ -286,6 +286,97 @@ def test_delete_config_api(client_logged_in: Any, sample_config: Any) -> None:
     assert response.status_code == 404
 
 
+def test_index_lists_active_and_inactive_configs(
+    app: Any, client_logged_in: Any, sample_config: Any, test_user: Any
+) -> None:
+    """Home lista alertas ativos e inativos sem filtro."""
+    from app.extensions import db
+    from app.models import SearchConfig
+
+    with app.app_context():
+        persisted_sample = db.session.get(SearchConfig, sample_config.id)
+        assert persisted_sample is not None
+        persisted_sample.active = False
+
+        active_config = SearchConfig(
+            user_id=test_user.id,
+            label="Config Ativa",
+            attach_csv=False,
+            mail_to=["active@example.com"],
+            mail_subject="Ativa",
+            active=True,
+        )
+        db.session.add(active_config)
+        db.session.commit()
+        db.session.refresh(active_config)
+
+    response = client_logged_in.get("/")
+
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+    assert sample_config.label in html
+    assert "Config Ativa" in html
+    assert html.count("Ativo") >= 1
+    assert html.count("Inativo") >= 1
+    assert f"/configs/{sample_config.id}/toggle-active" in html
+    assert f"/configs/{active_config.id}/toggle-active" in html
+
+
+def test_toggle_config_active_from_index(
+    app: Any, client_logged_in: Any, sample_config: Any
+) -> None:
+    """Toggle na home alterna o status do alerta e volta para a listagem."""
+    with app.app_context():
+        from app.extensions import db
+
+        sample_config.active = True
+        db.session.commit()
+
+    response = client_logged_in.post(
+        f"/configs/{sample_config.id}/toggle-active",
+        data={"page": 1},
+        follow_redirects=True,
+    )
+
+    assert response.status_code == 200
+    assert "inativado com sucesso" in response.get_data(as_text=True)
+
+    with app.app_context():
+        from app.extensions import db
+        from app.models import SearchConfig
+
+        db.session.expire_all()
+        updated = db.session.get(SearchConfig, sample_config.id)
+        assert updated is not None
+        assert updated.active is False
+
+
+def test_toggle_config_active_denies_other_user(
+    app: Any, client: Any, test_user_b: Any, sample_config: Any
+) -> None:
+    """Usuario sem ownership nao consegue alternar status de outro alerta."""
+    with client.session_transaction() as sess:
+        sess["_user_id"] = str(test_user_b.id)
+
+    response = client.post(
+        f"/configs/{sample_config.id}/toggle-active",
+        data={"page": 1},
+        follow_redirects=True,
+    )
+
+    assert response.status_code == 200
+    assert "Configuração não encontrada" in response.get_data(as_text=True)
+
+    with app.app_context():
+        from app.extensions import db
+        from app.models import SearchConfig
+
+        db.session.expire_all()
+        unchanged = db.session.get(SearchConfig, sample_config.id)
+        assert unchanged is not None
+        assert unchanged.active is True
+
+
 def test_multi_tenant_user_b_cannot_access_user_a_config(
     app: Any, client: Any, test_user: Any, test_user_b: Any, sample_config: Any
 ) -> None:

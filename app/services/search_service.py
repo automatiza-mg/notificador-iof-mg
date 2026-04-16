@@ -1,10 +1,22 @@
 """Serviço para gerenciar configurações de busca."""
 
+from dataclasses import dataclass
 from typing import Any
 
+from app.mailer.unsubscribe import normalize_email
 from app.models.search_config import SearchConfig, SearchTerm
 from app.repositories.search_config_repository import SearchConfigRepository
 from app.schemas.search_config import SearchConfigCreate, SearchConfigUpdate
+
+
+@dataclass(frozen=True, slots=True)
+class UnsubscribeResult:
+    """Resultado do descadastro de um email em um alerta."""
+
+    status: str
+    config: SearchConfig | None
+    email: str
+    deactivated: bool = False
 
 
 class SearchService:
@@ -32,7 +44,6 @@ class SearchService:
         config = SearchConfig(
             user_id=user_id,
             label=config_data.label,
-            description=config_data.description or "",
             attach_csv=config_data.attach_csv,
             mail_to=mail_to,
             mail_subject=config_data.mail_subject or "",
@@ -93,8 +104,6 @@ class SearchService:
         # Atualizar campos apenas se foram fornecidos (não None)
         if config_data.label is not None:
             config.label = config_data.label
-        if config_data.description is not None:
-            config.description = config_data.description
         if config_data.attach_csv is not None:
             config.attach_csv = config_data.attach_csv
         if config_data.mail_to is not None:
@@ -135,3 +144,44 @@ class SearchService:
 
         self.repository.delete(config)
         return True
+
+    def unsubscribe_email_from_config(
+        self, config_id: int, email: str
+    ) -> UnsubscribeResult:
+        """Remove um email de um alerta e inativa se ele ficar sem destinatários."""
+        normalized_email = normalize_email(email)
+        config = self.repository.get_by_id(config_id, user_id=None)
+        if not config:
+            return UnsubscribeResult(
+                status="not_found",
+                config=None,
+                email=normalized_email,
+            )
+
+        normalized_mail_to = [normalize_email(address) for address in config.mail_to]
+        if normalized_email not in normalized_mail_to:
+            return UnsubscribeResult(
+                status="already_removed",
+                config=config,
+                email=normalized_email,
+            )
+
+        remaining_mail_to = [
+            original_email
+            for original_email in config.mail_to
+            if normalize_email(original_email) != normalized_email
+        ]
+        config.mail_to = remaining_mail_to
+
+        deactivated = False
+        if not remaining_mail_to:
+            config.active = False
+            deactivated = True
+
+        saved_config = self.repository.save(config)
+        return UnsubscribeResult(
+            status="removed",
+            config=saved_config,
+            email=normalized_email,
+            deactivated=deactivated,
+        )

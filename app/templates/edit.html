@@ -63,7 +63,7 @@
                 <div class="flex gap-2 relative">
                     <input type="text" id="newTerm" placeholder="" maxlength="255"
                            class="w-full pl-5 pr-32 py-3 bg-transparent border border-[#5C9FBD] rounded-full focus:outline-none focus:ring-2 focus:ring-[#5C9FBD] text-[#071932]">
-                    <button type="button" id="addTermBtn" class="absolute right-1 top-1 bottom-1 bg-[#5C9FBD] hover:bg-[#4A859F] text-white px-5 rounded-full text-sm font-medium transition whitespace-nowrap">
+                    <button type="button" id="addTermBtn" disabled class="absolute right-1 top-1 bottom-1 bg-[#5C9FBD] hover:bg-[#4A859F] disabled:bg-[#A0AEC0] disabled:hover:bg-[#A0AEC0] text-white px-5 rounded-full text-sm font-medium transition whitespace-nowrap disabled:cursor-not-allowed" aria-disabled="true">
                         + Adicionar
                     </button>
                 </div>
@@ -110,13 +110,6 @@
         <!-- Coluna Direita: Descrição e Emails -->
         <div class="space-y-8">
             
-            <!-- Descrição -->
-            <div>
-                <label for="description" class="block text-lg font-bold text-[#071932] mb-3">Descrição do alerta</label>
-                <input type="text" id="description" name="description" value="{{ form_data.get('description', config.description) }}" maxlength="1000"
-                       class="w-full px-5 py-3 bg-transparent border border-[#5C9FBD] rounded-full focus:outline-none focus:ring-2 focus:ring-[#5C9FBD] text-[#071932]">
-            </div>
-
             <!-- Assunto -->
             <div>
                 <label for="mail_subject" class="block text-lg font-bold text-[#071932] mb-3">Assunto do email</label>
@@ -130,7 +123,7 @@
                 <div class="flex gap-2 relative">
                     <input type="email" id="newEmail" placeholder="" maxlength="255"
                            class="w-full pl-5 pr-32 py-3 bg-transparent border border-[#5C9FBD] rounded-full focus:outline-none focus:ring-2 focus:ring-[#5C9FBD] text-[#071932]">
-                    <button type="button" id="addEmailBtn" class="absolute right-1 top-1 bottom-1 bg-[#5C9FBD] hover:bg-[#4A859F] text-white px-5 rounded-full text-sm font-medium transition whitespace-nowrap">
+                    <button type="button" id="addEmailBtn" disabled class="absolute right-1 top-1 bottom-1 bg-[#5C9FBD] hover:bg-[#4A859F] disabled:bg-[#A0AEC0] disabled:hover:bg-[#A0AEC0] text-white px-5 rounded-full text-sm font-medium transition whitespace-nowrap disabled:cursor-not-allowed" aria-disabled="true">
                         + Adicionar
                     </button>
                 </div>
@@ -153,9 +146,11 @@
 
     <!-- Botões de Ação Inferiores -->
     <div class="flex flex-col sm:flex-row justify-center items-center gap-6 mt-16 mb-8">
+        {% if config.APP_ENV == 'development' %}
         <a href="{{ url_for('web.backtest_config', config_id=config.id) }}" class="w-full sm:w-auto min-w-[160px] text-center bg-[#5C9FBD] hover:bg-[#4A859F] text-white font-bold py-3.5 px-8 rounded-full shadow-md uppercase tracking-wide transition">
             TESTAR
         </a>
+        {% endif %}
         <a href="{{ url_for('web.index') }}" class="w-full sm:w-auto min-w-[160px] text-center bg-[#A0AEC0] hover:bg-gray-500 text-white font-bold py-3.5 px-8 rounded-full shadow-md uppercase tracking-wide transition">
             CANCELAR
         </a>

@@ -123,9 +123,14 @@ function editSearchTerm(index) {
 function updateTermButtons() {
     const addBtn = document.getElementById('addTermBtn');
     const input = document.getElementById('newTerm');
+    const hasReachedLimit = termsList.length >= MAX_TERMS;
+    const hasValue = input ? input.value.trim().length > 0 : false;
     
-    if (addBtn) addBtn.disabled = termsList.length >= MAX_TERMS;
-    if (input) input.disabled = termsList.length >= MAX_TERMS;
+    if (addBtn) {
+        addBtn.disabled = hasReachedLimit || !hasValue;
+        addBtn.setAttribute('aria-disabled', String(addBtn.disabled));
+    }
+    if (input) input.disabled = hasReachedLimit;
 }
 
 // ========== ACOES DE EMAILS ==========
@@ -176,9 +181,14 @@ function editEmail(index) {
 function updateEmailButtons() {
     const addBtn = document.getElementById('addEmailBtn');
     const input = document.getElementById('newEmail');
+    const hasReachedLimit = emailsList.length >= MAX_EMAILS;
+    const hasValue = input ? input.value.trim().length > 0 : false;
     
-    if (addBtn) addBtn.disabled = emailsList.length >= MAX_EMAILS;
-    if (input) input.disabled = emailsList.length >= MAX_EMAILS;
+    if (addBtn) {
+        addBtn.disabled = hasReachedLimit || !hasValue;
+        addBtn.setAttribute('aria-disabled', String(addBtn.disabled));
+    }
+    if (input) input.disabled = hasReachedLimit;
 }
 
 // ========== INITIALIZATION AND LISTENERS ==========
@@ -191,6 +201,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     if (addTermBtn && newTermInput) {
         addTermBtn.addEventListener('click', addSearchTermAction);
+        newTermInput.addEventListener('input', updateTermButtons);
         newTermInput.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
@@ -205,6 +216,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     if (addEmailBtn && newEmailInput) {
         addEmailBtn.addEventListener('click', addEmailAction);
+        newEmailInput.addEventListener('input', updateEmailButtons);
         newEmailInput.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
                 e.preventDefault();
@@ -317,4 +329,6 @@ function initializeForm(initialTermsData, initialEmailsData, isAllExact) {
     
     renderTerms();
     renderEmails();
+    updateTermButtons();
+    updateEmailButtons();
 }

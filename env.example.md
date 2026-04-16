@@ -86,6 +86,9 @@ DIARIOS_DIR=diarios
 # --------------------------------------------------------------
 # EMAIL — AZURE EM PRODUÇÃO / SMTP EM DESENVOLVIMENTO
 # --------------------------------------------------------------
+# URL pública da aplicação para montar links absolutos em emails
+APP_BASE_URL=http://localhost:5000
+
 # Provider de envio: azure (produção) | smtp (desenvolvimento)
 MAIL_PROVIDER=azure
 
@@ -239,6 +242,7 @@ O app suporta dois providers:
 - **`AZURE_EMAIL_ENDPOINT`**: endpoint do recurso ACS.
 - **`AZURE_EMAIL_SENDER_ADDRESS`**: remetente autorizado no domínio do ACS.
 - **`AZURE_COMMUNICATION_CONNECTION_STRING`**: connection string do recurso de comunicação.
+- **`APP_BASE_URL`**: URL pública usada para montar o link de descadastro no rodapé dos emails.
 
 Exemplo:
 
@@ -250,6 +254,8 @@ AZURE_COMMUNICATION_CONNECTION_STRING=endpoint=https://automatiza-comms.brazil.c
 ```
 
 > 🔐 Recomendação: use App Settings ou Key Vault para armazenar a connection string. Se a chave tiver sido exposta em prints ou chats, faça rotação imediatamente.
+
+> 📩 Os emails de alerta incluem um link individual de descadastro. Se o último email de um alerta for removido, o alerta é inativado automaticamente.
 
 #### SMTP / Flask-Mail (desenvolvimento)
 Variáveis usadas quando `MAIL_PROVIDER=smtp`:

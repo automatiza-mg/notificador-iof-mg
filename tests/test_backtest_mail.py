@@ -23,7 +23,9 @@ def _build_report() -> Any:
 
 def _build_config() -> Any:
     return SimpleNamespace(
+        id=1,
         mail_subject="Teste de Busca - Diário Oficial",
+        label="Alerta teste",
         mail_to=["destinatario@example.com"],
         attach_csv=False,
     )
@@ -62,9 +64,11 @@ def test_send_backtest_email_reports_azure_success_message(app: Any) -> None:
     )
 
     with app.test_request_context("/"):
-        with patch("app.web.routes.Mailer.send") as send:
-            send.return_value = [SimpleNamespace(message_id="msg-123")]
-            _send_backtest_email(_build_config(), _build_report())
+        with patch("app.web.routes.build_notification_emails") as build_emails:
+            build_emails.return_value = [SimpleNamespace()]
+            with patch("app.web.routes.Mailer.send") as send:
+                send.return_value = [SimpleNamespace(message_id="msg-123")]
+                _send_backtest_email(_build_config(), _build_report())
         messages = get_flashed_messages(with_categories=True)
 
     assert messages == [

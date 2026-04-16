@@ -19,7 +19,6 @@ def test_create_config(app: Any, test_user: Any) -> None:
 
         config_data = SearchConfigCreate(
             label="Service Test",
-            description="",
             mail_subject="",
             teams_webhook=None,
             terms=[SearchTermBase(term="unit test", exact=True)],
@@ -43,7 +42,6 @@ def test_update_config(app: Any, sample_config: Any, test_user: Any) -> None:
 
         update_data = SearchConfigUpdate(
             label="Updated Label",
-            description="updated",
             mail_subject="",
             mail_to=["unit@test.com"],
             terms=[SearchTermBase(term="new term", exact=False)],
@@ -92,3 +90,23 @@ def test_get_config_returns_none_for_other_user(
         # sample_config pertence a test_user, não test_user_b
         config = service.get_config(sample_config.id, user_id=test_user_b.id)
         assert config is None
+
+
+def test_unsubscribe_email_from_config_deactivates_alert(
+    app: Any, sample_config: Any
+) -> None:
+    """Descadastro do ultimo email inativa automaticamente o alerta."""
+    with app.app_context():
+        repo = SearchConfigRepository()
+        service = SearchService(repo)
+
+        result = service.unsubscribe_email_from_config(
+            sample_config.id,
+            "test@example.com",
+        )
+
+        assert result.status == "removed"
+        assert result.deactivated is True
+        assert result.config is not None
+        assert result.config.mail_to == []
+        assert result.config.active is False

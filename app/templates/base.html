@@ -15,6 +15,7 @@
             flex-direction: column;
             background-color: white;
             margin: 0;
+            position: relative;
         }
         .top-bar {
             background: linear-gradient(90deg, #5C9FBD 0%, #152B44 100%);
@@ -43,6 +44,8 @@
         }
         .main-container {
             flex-grow: 1;
+            position: relative;
+            z-index: 1;
         }
         .footer-bar {
             background-color: #A0AEC0;
@@ -50,6 +53,18 @@
             padding: 0.5rem 2rem;
             text-align: right;
             font-size: 0.85rem;
+            position: relative;
+            z-index: 1;
+        }
+        .app-watermark {
+            position: fixed;
+            right: 2rem;
+            bottom: 3.25rem;
+            width: 150px;
+            opacity: 0.28;
+            pointer-events: none;
+            z-index: 0;
+            filter: brightness(0) saturate(100%) invert(76%) sepia(0%) saturate(0%) hue-rotate(146deg) brightness(94%) contrast(89%);
         }
     </style>
     {% block extra_head %}{% endblock %}
@@ -57,10 +72,12 @@
 <body>
     <!-- Navbar -->
     <nav class="top-bar">
-        <div>Sistema de Notificação do Diário Oficial Eletrônico Minas Gerais</div>
+        <a href="{{ url_for('web.index') }}" class="text-white no-underline hover:opacity-80 transition">
+            Sistema de Notificação do Diário Oficial Eletrônico Minas Gerais
+        </a>
         <div class="flex items-center gap-8">
             <a href="https://forms.office.com/r/YiDy5dLfVY" target="_blank" rel="noopener noreferrer" class="text-white text-[0.95rem] hover:opacity-80 transition hidden sm:block">
-                Encontrou algum problema? Reporte aqui
+                Encontrou algum problema? Clique aqui
             </a>
             {% if current_user.is_authenticated %}
             <form method="post" action="{{ url_for('web.logout') }}" class="inline m-0" aria-label="Sair">
@@ -126,6 +143,8 @@
             {% block content %}{% endblock %}
         </div>
     </main>
+
+    <img src="{{ url_for('static', filename='img/automatiza_logo.png') }}" alt="Automatiza" class="app-watermark">
 
     <!-- Footer -->
     <footer class="footer-bar">

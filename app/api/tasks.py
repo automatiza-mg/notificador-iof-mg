@@ -9,7 +9,7 @@ from flask import Blueprint, current_app, jsonify, request
 
 from app.iof.v1.consulta import consulta_por_data, convert_pages
 from app.mailer.mailer import Mailer
-from app.mailer.notification import notification_email
+from app.mailer.notification import build_notification_emails
 from app.repositories.search_config_repository import SearchConfigRepository
 from app.search.source import Pagina, SearchSource, Term, Trigger
 from app.services.search_service import SearchService
@@ -226,13 +226,16 @@ def notify_search_config_sync(publish_date: date, config_id: int) -> None:
         # Enviar emails se configurado
         if config.mail_to:
             mailer = Mailer(current_app)
-            subject = config.mail_subject or "Novas notificações - Diário Oficial"
-            email = notification_email(
-                config.mail_to, report, subject=subject, attach_csv=config.attach_csv
+            emails = build_notification_emails(
+                config=config,
+                report=report,
+                secret_key=str(current_app.config["SECRET_KEY"]),
+                app_base_url=str(current_app.config.get("APP_BASE_URL", "")),
+                app_env=str(current_app.config.get("APP_ENV", "development")),
             )
 
             try:
-                results = mailer.send(email)
+                results = mailer.send(*emails)
                 csv_info = (
                     " com CSV anexado" if config.attach_csv and report.count > 0 else ""
                 )

@@ -79,7 +79,6 @@ def sample_config(app: Flask, test_user: User) -> SearchConfig:
         config = SearchConfig(
             user_id=test_user.id,
             label="Test Config",
-            description="Config for testing",
             attach_csv=False,
             mail_to=["test@example.com"],
             mail_subject="Test Subject",

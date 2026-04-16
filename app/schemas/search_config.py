@@ -18,9 +18,6 @@ class SearchConfigBase(BaseModel):
     label: str = Field(
         ..., min_length=1, max_length=100, description="Nome da configuração"
     )
-    description: str | None = Field(
-        None, max_length=500, description="Descrição opcional"
-    )
     attach_csv: bool = Field(
         default=False, description="Anexar CSV com resultados no email"
     )
@@ -50,7 +47,6 @@ class SearchConfigUpdate(BaseModel):
     """Schema para atualização (todos campos opcionais)."""
 
     label: str | None = Field(None, min_length=1, max_length=100)
-    description: str | None = Field(None, max_length=500)
     attach_csv: bool | None = None
     mail_to: list[EmailStr] | None = Field(None, max_length=5)
     mail_subject: str | None = Field(None, max_length=200)

@@ -3,7 +3,7 @@
 import os
 from datetime import UTC, date, datetime
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from flask import (
     Blueprint,
@@ -15,16 +15,21 @@ from flask import (
     url_for,
 )
 from flask_login import current_user, login_required
+from itsdangerous import BadSignature, SignatureExpired
 from pydantic import ValidationError
 
 from app.iof.v1.consulta import consulta_por_data, convert_pages
 from app.mailer.mailer import Mailer
-from app.mailer.notification import notification_email
+from app.mailer.notification import build_notification_emails
+from app.mailer.unsubscribe import load_unsubscribe_token
 from app.repositories.search_config_repository import SearchConfigRepository
 from app.schemas.search_config import SearchConfigCreate, SearchConfigUpdate
 from app.search.source import Pagina as SearchPagina
 from app.search.source import SearchSource, Term, Trigger
 from app.services.search_service import SearchService
+
+if TYPE_CHECKING:
+    from app.services.search_service import UnsubscribeResult
 
 bp = Blueprint("web", __name__)
 
@@ -39,15 +44,12 @@ def get_service() -> SearchService:
 @login_required
 def index() -> Any:
     """Lista todas as configurações do usuário logado."""
-    active_only = request.args.get("active_only", "false").lower() == "true"
     page = request.args.get("page", 1, type=int)
     service = get_service()
     configs_pagination = service.list_configs_paginated(
-        page=page, per_page=6, active_only=active_only, user_id=current_user.id
+        page=page, per_page=6, active_only=False, user_id=current_user.id
     )
-    return render_template(
-        "index.html", configs=configs_pagination, active_only=active_only
-    )
+    return render_template("index.html", configs=configs_pagination)
 
 
 @bp.route("/configs/new", methods=["GET", "POST"])
@@ -81,7 +83,6 @@ def create_config() -> Any:
         # Montar dados da configuração
         config_data = {
             "label": data.get("label", "").strip(),
-            "description": data.get("description", "").strip(),
             "attach_csv": data.get("attach_csv") == "on",
             "mail_to": mail_to,
             "mail_subject": data.get("mail_subject", "").strip(),
@@ -174,7 +175,6 @@ def edit_config(config_id: int) -> Any:
         # Montar dados da configuração
         config_data = {
             "label": data.get("label", "").strip(),
-            "description": data.get("description", "").strip(),
             "attach_csv": data.get("attach_csv") == "on",
             "mail_to": mail_to,
             "mail_subject": data.get("mail_subject", "").strip(),
@@ -214,7 +214,6 @@ def edit_config(config_id: int) -> Any:
     # Preparar dados do formulário
     form_data = {
         "label": config.label,
-        "description": config.description,
         "attach_csv": config.attach_csv,
         "mail_to": config.mail_to,
         "mail_subject": config.mail_subject,
@@ -237,6 +236,32 @@ def delete_config(config_id: int) -> Any:
     else:
         flash("Configuração não encontrada", "error")
     return redirect(url_for("web.index"))
+
+
+@bp.route("/configs/<int:config_id>/toggle-active", methods=["POST"])
+@login_required
+def toggle_config_active(config_id: int) -> Any:
+    """Alterna o status ativo/inativo diretamente pela listagem."""
+    service = get_service()
+    config = service.get_config(config_id, user_id=current_user.id)
+    page = request.form.get("page", default=1, type=int)
+
+    if not config:
+        flash("Configuração não encontrada", "error")
+        return redirect(url_for("web.index", page=page))
+
+    config_update = SearchConfigUpdate.model_validate({"active": not config.active})
+    updated_config = service.update_config(
+        config_id, config_update, user_id=current_user.id
+    )
+
+    if not updated_config:
+        flash("Erro ao atualizar configuração", "error")
+        return redirect(url_for("web.index", page=page))
+
+    status_message = "ativado" if updated_config.active else "inativado"
+    flash(f'Alerta "{updated_config.label}" {status_message} com sucesso!', "success")
+    return redirect(url_for("web.index", page=page))
 
 
 def _render_backtest(
@@ -299,6 +324,8 @@ def _get_valid_date(date_str: str | None) -> date | None:
 
 def _send_backtest_email(config: Any, report: Any) -> None:
     provider_name = str(current_app.config.get("MAIL_PROVIDER", "smtp"))
+    mail_server = current_app.config.get("MAIL_SERVER", "")
+    mail_port = current_app.config.get("MAIL_PORT", 0)
     try:
         mailer = Mailer(current_app)
         config_error = mailer.validate_configuration()
@@ -306,14 +333,14 @@ def _send_backtest_email(config: Any, report: Any) -> None:
             flash(config_error, "warning")
             return
 
-        subject = config.mail_subject or "Teste de Busca - Diário Oficial"
-        email = notification_email(
-            config.mail_to,
-            report,
-            subject=subject,
-            attach_csv=config.attach_csv,
+        emails = build_notification_emails(
+            config=config,
+            report=report,
+            secret_key=str(current_app.config["SECRET_KEY"]),
+            app_base_url=str(current_app.config.get("APP_BASE_URL", "")),
+            app_env=str(current_app.config.get("APP_ENV", "development")),
         )
-        results = mailer.send(email)
+        results = mailer.send(*emails)
         csv_info = " com CSV anexado" if config.attach_csv and report.count > 0 else ""
         message_id = results[0].message_id if results else None
         provider_info = f" via {provider_name.upper()}"
@@ -324,8 +351,6 @@ def _send_backtest_email(config: Any, report: Any) -> None:
             "success",
         )
     except (ConnectionRefusedError, OSError) as e:
-        mail_server = current_app.config.get("MAIL_SERVER", "")
-        mail_port = current_app.config.get("MAIL_PORT", 0)
         error_code = getattr(e, "errno", None)
         if error_code == 61 or "Connection refused" in str(e) or "[Errno 61]" in str(e):
             tls_hint = (
@@ -392,6 +417,117 @@ def _send_backtest_email(config: Any, report: Any) -> None:
                 "Verifique as configurações de email no arquivo .env.",
                 "error",
             )
+
+
+def _mask_email(email: str) -> str:
+    local_part, _, domain = email.partition("@")
+    if not domain:
+        return email
+    if len(local_part) <= 2:
+        masked_local = f"{local_part[0]}***" if local_part else "***"
+    else:
+        masked_local = f"{local_part[0]}***{local_part[-1]}"
+    return f"{masked_local}@{domain}"
+
+
+def _render_unsubscribe_result(
+    *,
+    title: str,
+    message: str,
+    status: str,
+    config: Any = None,
+    email: str | None = None,
+) -> Any:
+    return render_template(
+        "unsubscribe_result.html",
+        title=title,
+        message=message,
+        status=status,
+        config=config,
+        email=email,
+    )
+
+
+@bp.route("/unsubscribe")
+def unsubscribe_email() -> Any:
+    """Descadastra um email de um alerta usando token assinado."""
+    token = request.args.get("token", "").strip()
+    if not token:
+        return _render_unsubscribe_result(
+            title="Link inválido",
+            message="O link de descadastro é inválido ou está incompleto.",
+            status="error",
+        )
+
+    try:
+        payload = load_unsubscribe_token(
+            token=token,
+            secret_key=str(current_app.config["SECRET_KEY"]),
+            max_age_seconds=90 * 24 * 60 * 60,
+        )
+    except SignatureExpired:
+        return _render_unsubscribe_result(
+            title="Link expirado",
+            message=(
+                "O link de descadastro expirou. Solicite um novo alerta para "
+                "receber outro email com link atualizado."
+            ),
+            status="warning",
+        )
+    except BadSignature:
+        return _render_unsubscribe_result(
+            title="Link inválido",
+            message="O link de descadastro é inválido ou foi alterado.",
+            status="error",
+        )
+
+    service = get_service()
+    result: UnsubscribeResult = service.unsubscribe_email_from_config(
+        payload.config_id,
+        payload.email,
+    )
+    masked_email = _mask_email(payload.email)
+
+    if result.status == "not_found":
+        return _render_unsubscribe_result(
+            title="Alerta não encontrado",
+            message=(
+                "Este alerta não está mais disponível. O email informado não "
+                "receberá novas notificações deste link."
+            ),
+            status="warning",
+            email=masked_email,
+        )
+
+    if result.status == "already_removed":
+        return _render_unsubscribe_result(
+            title="Email já descadastrado",
+            message=(f"O email {masked_email} já estava descadastrado deste alerta."),
+            status="info",
+            config=result.config,
+            email=masked_email,
+        )
+
+    if result.deactivated:
+        return _render_unsubscribe_result(
+            title="Descadastro concluído",
+            message=(
+                f"O email {masked_email} foi descadastrado com sucesso. Como "
+                "este era o último destinatário, o alerta foi inativado "
+                "automaticamente."
+            ),
+            status="success",
+            config=result.config,
+            email=masked_email,
+        )
+
+    return _render_unsubscribe_result(
+        title="Descadastro concluído",
+        message=(f"O email {masked_email} foi descadastrado com sucesso deste alerta."),
+        status="success",
+        config=result.config,
+        email=masked_email,
+    )
 
 
 @bp.route("/configs/<int:config_id>/backtest", methods=["GET", "POST"])
