@@ -6,7 +6,7 @@ Este arquivo serve como **guia completo** para configurar variáveis de ambiente
 >
 > 1. Copie o bloco **“Arquivo `.env.example` (copiar e colar)”** para um arquivo chamado `.env` na raiz do projeto.
 > 2. Ajuste os valores conforme seu ambiente (local, Docker, Azure).
-> 3. Suba a aplicação e valide usando o **Backtest** (em `APP_ENV=development`) ou chamando o endpoint **`/api/tasks/process-daily`** com `API_KEY`.
+> 3. Suba a aplicação e valide pela interface web, pelo botão **TESTAR** em `APP_ENV=development`, ou chamando o endpoint **`/api/tasks/process-daily`** com `API_KEY`.
 
 ---
 
@@ -164,7 +164,7 @@ IOF_PASSWORD=
 ## 2) Explicação por blocos (o que cada variável faz)
 
 ### 2.1 Ambiente
-- **`APP_ENV`**: define comportamento geral (ex.: `development` habilita Backtest; `production` desabilita Backtest por padrão).
+- **`APP_ENV`**: define o comportamento geral da aplicação. Em `development`, a interface exibe o botão **TESTAR** na edição do alerta.
 - **`SECRET_KEY`**: usado pelo Flask para sessão/flash messages. Em produção deve ser **forte** e **secreta**.
 - **`APP_NAME`**: identificador textual.
 - **`CLIENT_URL`**: útil se existir front separado (não é obrigatório).
@@ -368,7 +368,7 @@ E habilite:
 ## 5) Checklist de validação
 
 - [ ] `API_KEY` definida e usada no endpoint `/api/tasks/process-daily`
-- [ ] `MAIL_*` configurado e testado (Backtest em DEV ajuda)
+- [ ] `MAIL_*` configurado e testado (o botão TESTAR em development pode ajudar na validação)
 - [ ] `poppler-utils` instalado (ou usar Docker)
 - [ ] `DATABASE_URL` aponta para local persistente correto
 - [ ] `DIARIOS_DIR` aponta para pasta correta (principalmente no Azure)

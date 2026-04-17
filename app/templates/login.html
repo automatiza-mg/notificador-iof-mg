@@ -100,13 +100,26 @@
             margin-top: 1.5rem;
             z-index: 10;
         }
+        .watermark-logo {
+            width: 180px;
+            height: 120px;
+            pointer-events: none;
+            background-color: #000000;
+            -webkit-mask-image: url("{{ url_for('static', filename='img/automatiza_logo.png') }}");
+            -webkit-mask-repeat: no-repeat;
+            -webkit-mask-position: center;
+            -webkit-mask-size: contain;
+            mask-image: url("{{ url_for('static', filename='img/automatiza_logo.png') }}");
+            mask-repeat: no-repeat;
+            mask-position: center;
+            mask-size: contain;
+        }
         .watermark {
             position: absolute;
             bottom: 2rem;
             right: 2rem;
-            opacity: 0.15;
-            width: 150px;
             z-index: 1;
+            filter: drop-shadow(0 8px 14px rgba(15, 23, 42, 0.18));
         }
         .footer-credits {
             position: absolute;
@@ -161,7 +174,7 @@
 
         <p class="feedback-text">Atualmente estamos em fases de testes, contamos com a sua<br>paciência e com o seu feedback para aprimorar a ferramenta.</p>
 
-        <img src="{{ url_for('static', filename='img/automatiza_logo.png') }}" alt="Automatiza" class="watermark">
+        <div class="watermark-logo watermark" aria-hidden="true"></div>
         
         <div class="footer-credits">
             Desenvolvido por Escritório Central de Inovação e Automatização - Seplag/MG

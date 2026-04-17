@@ -10,7 +10,7 @@
   - Assunto configurável por configuração
 - 📎 **Anexo CSV opcional** com todos os resultados encontrados (compatível com Excel)
 - 🌐 **Interface Web** para CRUD de configurações (criar/editar/ativar/desativar/deletar)
-- 🧪 **Backtest (DEV)**: testar configurações em datas específicas antes de ativar
+- 🧪 **Backtest**: testar configurações em datas específicas antes de ativar
 - ⚡ **Motor de busca Full-Text (SQLite FTS5)** para performance na busca
 - 🧩 **API REST** para integração / automação
 - 🐳 **Docker** pronto para produção (Gunicorn + migrations no startup)
@@ -36,8 +36,7 @@ sudo apt-get update && sudo apt-get install -y poppler-utils
 # (recomendado) use uv para instalar dependências
 uv sync
 
-# crie um arquivo .env (veja template abaixo)
-cp -n .env.example .env 2>/dev/null || true
+# crie manualmente um arquivo .env usando o bloco documentado em env.example.md
 ```
 
 3) **Rodar migrations**
@@ -150,9 +149,9 @@ Este projeto usa **dois bancos/artefatos diferentes**:
 
 A aplicação carrega variáveis de ambiente via `python-dotenv`.
 
-### Template sugerido (`.env.example`)
+### Template sugerido para o `.env`
 
-> **Dica:** este repositório não inclui `.env.example` por padrão. Você pode criar o arquivo abaixo e manter **segredos fora do Git**.
+> **Dica:** use o arquivo `env.example.md` como referência documentada para montar seu `.env` local e manter **segredos fora do Git**.
 
 ```env
 # Ambiente
@@ -295,7 +294,7 @@ Rotas principais:
 - `GET /configs/<id>` – detalhes
 - `GET|POST /configs/<id>/edit` – editar
 - `POST /configs/<id>/delete` – deletar
-- `GET|POST /configs/<id>/backtest` – backtest (**somente em `APP_ENV=development`**)
+- `GET|POST /configs/<id>/backtest` – backtest da configuração
 
 ### Como usar
 
@@ -306,7 +305,7 @@ Rotas principais:
    - Destinatários (até 5)
    - (Opcional) **Anexar CSV**
 3. Salve.
-4. (DEV) Use **“Testar Busca”** para validar em uma data específica.
+4. Em `APP_ENV=development`, o botão **“TESTAR”** aparece na tela de edição para validar em uma data específica.
 
 ---
 
@@ -527,7 +526,8 @@ No painel do Azure Web App, vá em **Environment Variables** e adicione:
 
 ### Backtest
 
-- Disponível apenas quando `APP_ENV=development`.
+- Em `APP_ENV=development`, a interface exibe o botão **TESTAR** na tela de edição do alerta.
+- A API de backtest continua restrita ao uso em desenvolvimento.
 
 ---
 

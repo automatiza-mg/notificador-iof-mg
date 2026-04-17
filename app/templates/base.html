@@ -56,15 +56,43 @@
             position: relative;
             z-index: 1;
         }
+        .watermark-logo {
+            width: 180px;
+            height: 120px;
+            pointer-events: none;
+            background-color: #000000;
+            -webkit-mask-image: url("{{ url_for('static', filename='img/automatiza_logo.png') }}");
+            -webkit-mask-repeat: no-repeat;
+            -webkit-mask-position: center;
+            -webkit-mask-size: contain;
+            mask-image: url("{{ url_for('static', filename='img/automatiza_logo.png') }}");
+            mask-repeat: no-repeat;
+            mask-position: center;
+            mask-size: contain;
+        }
         .app-watermark {
             position: fixed;
             right: 2rem;
             bottom: 3.25rem;
-            width: 150px;
-            opacity: 0.28;
             pointer-events: none;
             z-index: 0;
-            filter: brightness(0) saturate(100%) invert(76%) sepia(0%) saturate(0%) hue-rotate(146deg) brightness(94%) contrast(89%);
+            filter: drop-shadow(0 8px 14px rgba(15, 23, 42, 0.18));
+        }
+        .overlay-watermark {
+            position: absolute;
+            right: 2rem;
+            bottom: 2rem;
+            z-index: 1;
+        }
+        @media (max-width: 640px) {
+            .app-watermark {
+                right: 1rem;
+                bottom: 3rem;
+            }
+            .overlay-watermark {
+                right: 1rem;
+                bottom: 1rem;
+            }
         }
     </style>
     {% block extra_head %}{% endblock %}
@@ -144,7 +172,7 @@
         </div>
     </main>
 
-    <img src="{{ url_for('static', filename='img/automatiza_logo.png') }}" alt="Automatiza" class="app-watermark">
+    <div class="watermark-logo app-watermark" aria-hidden="true"></div>
 
     <!-- Footer -->
     <footer class="footer-bar">

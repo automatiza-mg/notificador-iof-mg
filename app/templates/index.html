@@ -45,7 +45,7 @@
                             <circle cx="11" cy="11" r="8"></circle>
                             <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                         </svg>
-                        <span><strong>{{ config.terms|length }}</strong> termo(s) de busca configurado(s)</span>
+                        <span><strong>{{ config.terms|length }}</strong> termo(s) de busca configurado(s):</span>
                     </div>
                     <p class="mt-2 pl-7 text-sm text-[#64748B] break-words">
                         {% for term in config.terms %}
@@ -59,7 +59,7 @@
                             <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
                             <polyline points="22,6 12,13 2,6"></polyline>
                         </svg>
-                        <span><strong>{{ config.mail_to|length }}</strong> email(s) configurado(s)</span>
+                        <span><strong>{{ config.mail_to|length }}</strong> email(s) configurado(s):</span>
                     </div>
                     <p class="mt-2 pl-7 text-sm text-[#64748B] break-all">
                         {% for email in config.mail_to %}

@@ -5,7 +5,7 @@
 {% block content %}
 <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gradient-to-br from-[#5C9FBD] to-[#152B44]">
     <!-- Watermark Logo -->
-    <img src="{{ url_for('static', filename='img/automatiza_logo.png') }}" alt="Automatiza" class="absolute bottom-8 right-8 w-[150px] opacity-15 pointer-events-none">
+    <div class="watermark-logo overlay-watermark" aria-hidden="true"></div>
     
     <div class="bg-white rounded-[2rem] p-10 md:p-12 w-full max-w-2xl shadow-[0_10px_25px_rgba(0,0,0,0.1)] text-center relative z-10">
         

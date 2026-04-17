@@ -1,6 +1,5 @@
 """Rotas web para interface HTML."""
 
-import os
 from datetime import UTC, date, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -205,7 +204,11 @@ def edit_config(config_id: int) -> Any:
                 errors[str(field)] = msg
 
             return render_template(
-                "edit.html", config=config, errors=errors, form_data=config_data
+                "edit.html",
+                config=config,
+                errors=errors,
+                form_data=config_data,
+                app_env=str(current_app.config.get("APP_ENV", "development")),
             )
 
         except Exception as e:  # noqa: BLE001  # noqa: BLE001  # noqa: BLE001
@@ -222,7 +225,13 @@ def edit_config(config_id: int) -> Any:
         "active": config.active,
     }
 
-    return render_template("edit.html", config=config, errors={}, form_data=form_data)
+    return render_template(
+        "edit.html",
+        config=config,
+        errors={},
+        form_data=form_data,
+        app_env=str(current_app.config.get("APP_ENV", "development")),
+    )
 
 
 @bp.route("/configs/<int:config_id>/delete", methods=["POST"])
@@ -539,11 +548,6 @@ def backtest_config(config_id: int) -> Any:
     if not config:
         flash("Configuração não encontrada", "error")
         return redirect(url_for("web.index"))
-
-    app_env = os.getenv("APP_ENV", "development")
-    if app_env != "development":
-        flash("Backtest disponível apenas em ambiente de desenvolvimento", "error")
-        return redirect(url_for("web.detail_config", config_id=config_id))
 
     if request.method != "POST":
         return _render_backtest(config)

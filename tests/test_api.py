@@ -26,6 +26,47 @@ def test_login_redirects_when_authenticated(client_logged_in: Any) -> None:
     assert "/configs/new" in (response_next.location or "")
 
 
+def test_edit_page_shows_backtest_button_in_development(
+    app: Any, client_logged_in: Any, sample_config: Any
+) -> None:
+    """GET /configs/<id>/edit exibe botão de teste em desenvolvimento."""
+    app.config["APP_ENV"] = "development"
+
+    response = client_logged_in.get(f"/configs/{sample_config.id}/edit")
+
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+    assert "TESTAR" in html
+    assert f"/configs/{sample_config.id}/backtest" in html
+
+
+def test_edit_page_hides_backtest_button_in_production(
+    app: Any, client_logged_in: Any, sample_config: Any
+) -> None:
+    """GET /configs/<id>/edit mantém botão de teste oculto em produção."""
+    app.config["APP_ENV"] = "production"
+
+    response = client_logged_in.get(f"/configs/{sample_config.id}/edit")
+
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+    assert "TESTAR" not in html
+    assert f"/configs/{sample_config.id}/backtest" not in html
+
+
+def test_backtest_page_is_accessible_by_direct_url_in_production(
+    app: Any, client_logged_in: Any, sample_config: Any
+) -> None:
+    """GET /configs/<id>/backtest segue acessível por URL direta em produção."""
+    app.config["APP_ENV"] = "production"
+
+    response = client_logged_in.get(f"/configs/{sample_config.id}/backtest")
+
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+    assert "Executar Teste" in html
+
+
 def test_entra_login_redirects_when_authenticated(
     client_logged_in: Any, app: Any
 ) -> None:
