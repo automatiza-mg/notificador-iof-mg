@@ -52,7 +52,7 @@ class SearchService:
         )
 
         for term_data in config_data.terms:
-            term = SearchTerm(term=term_data.term, exact=term_data.exact)
+            term = SearchTerm(term=term_data.term, exact=True)
             config.terms.append(term)
 
         return self.repository.save(config)
@@ -127,7 +127,7 @@ class SearchService:
             for term_data in config_data.terms:
                 term = SearchTerm(
                     term=term_data.term,
-                    exact=term_data.exact,
+                    exact=True,
                     search_config_id=config.id,
                 )
                 self.repository.add_term(term)

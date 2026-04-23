@@ -46,7 +46,7 @@ def config_to_dict(config: SearchConfig) -> dict[str, Any]:
         "active": config.active,
         "created_at": config.created_at.isoformat() if config.created_at else None,
         "updated_at": config.updated_at.isoformat() if config.updated_at else None,
-        "terms": [{"term": term.term, "exact": term.exact} for term in config.terms],
+        "terms": [{"term": term.term, "exact": True} for term in config.terms],
     }
 
 
@@ -192,9 +192,7 @@ def backtest_config(config_id: int) -> tuple[Any, int]:
                 doc_repo.save_pages(pages_data)
 
             # Converter termos da config para busca
-            search_terms = [
-                {"term": term.term, "exact": term.exact} for term in config.terms
-            ]
+            search_terms = [{"term": term.term, "exact": True} for term in config.terms]
 
             # Executar busca
             report = doc_repo.search(test_date, search_terms)
@@ -211,9 +209,7 @@ def backtest_config(config_id: int) -> tuple[Any, int]:
                     }
                     for h in report.results
                 ],
-                "search_terms": [
-                    {"term": t.term, "exact": t.exact} for t in config.terms
-                ],
+                "search_terms": [{"term": t.term, "exact": True} for t in config.terms],
                 "trigger": "backtest",
                 "count": report.count,
             }

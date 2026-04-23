@@ -213,7 +213,7 @@ def notify_search_config_sync(publish_date: date, config_id: int) -> None:
 
     try:
         # Converter termos
-        search_terms = [Term(term=term.term, exact=term.exact) for term in config.terms]
+        search_terms = [Term(term=term.term, exact=True) for term in config.terms]
 
         # Gerar relatório
         report = source.lookup(Trigger.CRON, publish_date, search_terms)

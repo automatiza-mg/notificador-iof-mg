@@ -23,7 +23,7 @@ class Term:
     """Termo de busca."""
 
     term: str
-    exact: bool = False
+    exact: bool = True
 
 
 @dataclass
@@ -177,11 +177,8 @@ class SearchSource:
         date_str = publish_date.strftime("%Y-%m-%d")
 
         for term in terms:
-            # Preparar termo para busca FTS5
-            search_term = term.term
-            if term.exact:
-                # Para busca exata, usar aspas
-                search_term = f'"{search_term}"'
+            # O sistema opera somente com busca exata.
+            search_term = f'"{term.term}"'
 
             query = """
             SELECT

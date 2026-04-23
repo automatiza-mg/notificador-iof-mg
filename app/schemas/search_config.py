@@ -9,7 +9,10 @@ class SearchTermBase(BaseModel):
     """Schema base para termo de busca."""
 
     term: str = Field(..., min_length=1, description="Termo a ser buscado")
-    exact: bool = Field(default=True, description="Se a busca deve ser exata")
+    exact: bool = Field(
+        default=True,
+        description="Campo legado mantido por compatibilidade; a busca é sempre exata",
+    )
 
 
 class SearchConfigBase(BaseModel):

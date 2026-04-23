@@ -59,20 +59,12 @@ def create_config() -> Any:
         data = request.form.to_dict()
 
         # Processar termos
-        terms = []
         term_inputs = request.form.getlist("term")
-        exact_inputs = request.form.getlist("term_exact")
-
-        for i, term_text in enumerate(term_inputs):
-            if term_text.strip():
-                terms.append(
-                    {
-                        "term": term_text.strip(),
-                        "exact": exact_inputs[i] == "on"
-                        if i < len(exact_inputs)
-                        else True,
-                    }
-                )
+        terms = [
+            {"term": stripped_term, "exact": True}
+            for term_text in term_inputs
+            if (stripped_term := term_text.strip())
+        ]
 
         # Processar emails
         mail_to = [
@@ -151,20 +143,12 @@ def edit_config(config_id: int) -> Any:
         data = request.form.to_dict()
 
         # Processar termos
-        terms = []
         term_inputs = request.form.getlist("term")
-        exact_inputs = request.form.getlist("term_exact")
-
-        for i, term_text in enumerate(term_inputs):
-            if term_text.strip():
-                terms.append(
-                    {
-                        "term": term_text.strip(),
-                        "exact": exact_inputs[i] == "on"
-                        if i < len(exact_inputs)
-                        else True,
-                    }
-                )
+        terms = [
+            {"term": stripped_term, "exact": True}
+            for term_text in term_inputs
+            if (stripped_term := term_text.strip())
+        ]
 
         # Processar emails
         mail_to = [
@@ -221,7 +205,7 @@ def edit_config(config_id: int) -> Any:
         "mail_to": config.mail_to,
         "mail_subject": config.mail_subject,
         "teams_webhook": "",  # Teams removido da interface
-        "terms": [{"term": t.term, "exact": t.exact} for t in config.terms],
+        "terms": [{"term": t.term, "exact": True} for t in config.terms],
         "active": config.active,
     }
 
@@ -565,7 +549,7 @@ def backtest_config(config_id: int) -> Any:
         if not _ensure_pages_exist(source, test_date):
             return _render_backtest(config)
 
-        search_terms = [Term(term=t.term, exact=t.exact) for t in config.terms]
+        search_terms = [Term(term=t.term, exact=True) for t in config.terms]
         report = source.lookup(Trigger.BACKTEST, test_date, search_terms)
 
         result = {
@@ -580,7 +564,7 @@ def backtest_config(config_id: int) -> Any:
                 for h in report.highlights
             ],
             "search_terms": [
-                {"term": t.term, "exact": t.exact} for t in report.search_terms
+                {"term": t.term, "exact": True} for t in report.search_terms
             ],
             "trigger": report.trigger.value,
             "count": report.count,

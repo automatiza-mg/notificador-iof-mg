@@ -38,6 +38,19 @@ def test_edit_page_shows_backtest_button_in_development(
     html = response.get_data(as_text=True)
     assert "TESTAR" in html
     assert f"/configs/{sample_config.id}/backtest" in html
+    assert "Busca Ampliada" not in html
+    assert "Busca Exata" not in html
+
+
+def test_create_page_hides_search_type_options(client_logged_in: Any) -> None:
+    """GET /configs/new não exibe mais seleção de tipo de busca."""
+    response = client_logged_in.get("/configs/new")
+
+    assert response.status_code == 200
+    html = response.get_data(as_text=True)
+    assert "Busca Exata" not in html
+    assert "Busca Ampliada" not in html
+    assert "global_search_type" not in html
 
 
 def test_edit_page_hides_backtest_button_in_production(
@@ -289,6 +302,22 @@ def test_create_config_api(client_logged_in: Any) -> None:
     assert response.status_code == 201
     data = response.get_json()
     assert data["label"] == "API Test"
+    assert data["terms"][0]["exact"] is True
+
+
+def test_create_config_api_ignores_exact_false(client_logged_in: Any) -> None:
+    """API normaliza termos para busca exata mesmo se exact=false for enviado."""
+    payload = {
+        "label": "API Exact Only",
+        "terms": [{"term": "api", "exact": False}],
+        "mail_to": ["api@test.com"],
+    }
+
+    response = client_logged_in.post("/api/search/configs", json=payload)
+
+    assert response.status_code == 201
+    data = response.get_json()
+    assert data["terms"][0]["exact"] is True
 
     payload_invalid = {
         "label": "Invalid",

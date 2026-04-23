@@ -55,7 +55,7 @@ def test_update_config(app: Any, sample_config: Any, test_user: Any) -> None:
         assert updated.label == "Updated Label"
         assert len(updated.terms) == 1
         assert updated.terms[0].term == "new term"
-        assert updated.terms[0].exact is False
+        assert updated.terms[0].exact is True
 
 
 def test_list_configs(app: Any, sample_config: Any, test_user: Any) -> None:

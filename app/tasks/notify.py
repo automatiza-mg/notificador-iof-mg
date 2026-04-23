@@ -42,7 +42,7 @@ def notify_search_config(publish_date_str: str, config_id: int) -> None:
             try:
                 # Converter termos
                 search_terms = [
-                    Term(term=term.term, exact=term.exact) for term in config.terms
+                    Term(term=term.term, exact=True) for term in config.terms
                 ]
 
                 # Gerar relatório

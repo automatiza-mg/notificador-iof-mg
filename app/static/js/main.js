@@ -249,10 +249,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 return false;
             }
             
-            // The type of search (exact or partial) is global now in our UI
-            // 0 means global Exact, 1 means global Partial (or whatever logic radio uses)
-            const isGlobalExact = document.getElementById('radioExata').checked;
-            
             // Clean any previously generated hidden inputs just in case
             document.querySelectorAll('.generated-hidden-term').forEach(el => el.remove());
             
@@ -264,13 +260,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 termInput.value = term;
                 termInput.className = 'generated-hidden-term';
                 form.appendChild(termInput);
-                
-                const exactInput = document.createElement('input');
-                exactInput.type = 'hidden';
-                exactInput.name = 'term_exact';
-                exactInput.value = isGlobalExact ? 'on' : 'off';
-                exactInput.className = 'generated-hidden-term';
-                form.appendChild(exactInput);
             });
             
             // UI Feedback para Submit
@@ -301,26 +290,9 @@ function escapeHtml(text) {
 }
 
 // Helper to be called from inline script in create/edit html
-function initializeForm(initialTermsData, initialEmailsData, isAllExact) {
-    // initialTermsData: [{term: "foo", exact: true}]
+function initializeForm(initialTermsData, initialEmailsData) {
     if (initialTermsData && initialTermsData.length > 0) {
         termsList = initialTermsData.map(t => t.term);
-        // We set the radio based on the first term (since it's a global setting now)
-        if (initialTermsData.length > 0) {
-             const exactRadio = document.getElementById('radioExata');
-             const ampliadaRadio = document.getElementById('radioAmpliada');
-             
-             // Try to use parameter if provided, otherwise fallback to first term
-             const exactStatus = isAllExact !== undefined ? isAllExact : initialTermsData[0].exact;
-             
-             if(exactRadio && ampliadaRadio) {
-                 if(exactStatus) {
-                     exactRadio.checked = true;
-                 } else {
-                     ampliadaRadio.checked = true;
-                 }
-             }
-        }
     }
     
     if (initialEmailsData && initialEmailsData.length > 0) {

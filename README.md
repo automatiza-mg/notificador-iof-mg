@@ -5,7 +5,7 @@
 ## ✨ Principais funcionalidades
 
 - 🔎 **Busca por termos (até 5 por configuração)**
-  - Busca **exata** (termo completo) ou **parcial** (substring)
+  - Busca **exata** por termo ou expressão
 - 📬 **Notificações por e-mail (até 5 destinatários)**
   - Assunto configurável por configuração
 - 📎 **Anexo CSV opcional** com todos os resultados encontrados (compatível com Excel)
@@ -73,7 +73,7 @@ uv run flask run
                          |
                          v
                 Para cada SearchConfig ativa:
-                 - Busca termos (exato/parcial)
+                 - Busca termos de forma exata
                  - Gera highlights + links
                  - Envia e-mail (CSV opcional)
 ```

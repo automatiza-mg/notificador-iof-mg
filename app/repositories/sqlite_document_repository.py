@@ -80,7 +80,7 @@ class SQLiteDocumentRepository(DocumentRepository):
         try:
             for term_data in terms:
                 term = term_data["term"]
-                search_term = f'"{term}"' if term_data.get("exact") else term
+                search_term = f'"{term}"'
 
                 query = """
                 SELECT

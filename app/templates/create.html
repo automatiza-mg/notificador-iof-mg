@@ -64,31 +64,6 @@
                 {% endif %}
             </div>
 
-            <!-- Configuração Global de Busca -->
-            <div class="space-y-4 pt-2">
-                <label class="flex items-start gap-3 cursor-pointer group">
-                    <div class="relative flex items-center justify-center mt-1">
-                        <input type="radio" name="global_search_type" id="radioExata" value="exact" class="peer sr-only" checked>
-                        <div class="w-5 h-5 rounded-full border-2 border-[#071932] flex items-center justify-center after:content-[''] after:w-2.5 after:h-2.5 after:bg-[#071932] after:rounded-full after:scale-0 peer-checked:after:scale-100 after:transition-transform"></div>
-                    </div>
-                    <div>
-                        <span class="block font-bold text-[#071932]">Busca Exata:</span>
-                        <span class="text-sm text-gray-800">Encontra somente o termo exatamente como foi digitado.</span>
-                    </div>
-                </label>
-
-                <label class="flex items-start gap-3 cursor-pointer group">
-                    <div class="relative flex items-center justify-center mt-1">
-                        <input type="radio" name="global_search_type" id="radioAmpliada" value="partial" class="peer sr-only">
-                        <div class="w-5 h-5 rounded-full border-2 border-[#071932] flex items-center justify-center after:content-[''] after:w-2.5 after:h-2.5 after:bg-[#071932] after:rounded-full after:scale-0 peer-checked:after:scale-100 after:transition-transform"></div>
-                    </div>
-                    <div>
-                        <span class="block font-bold text-[#071932]">Busca Ampliada:</span>
-                        <span class="text-sm text-gray-800">Encontra o termo mesmo com variações ou quando aparece dentro de outras palavras.</span>
-                    </div>
-                </label>
-            </div>
-            
         </div>
 
         <!-- Coluna Direita: Descrição e Emails -->
@@ -103,7 +78,7 @@
 
             <!-- Adicionar Emails -->
             <div>
-                <label class="block text-lg font-bold text-[#071932] mb-3">Destinatário(s) do email:</label>
+                <label class="block text-lg font-bold text-[#071932] mb-3">Destinatário(s) do email</label>
                 <div class="flex gap-2 relative">
                     <input type="email" id="newEmail" placeholder="" maxlength="255"
                        class="w-full pl-5 pr-32 py-3 bg-transparent border border-[#5C9FBD] rounded-full focus:outline-none focus:ring-2 focus:ring-[#5C9FBD] text-[#071932]">
@@ -148,14 +123,8 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize terms and emails
     const rawTerms = {{ form_data.get('terms', [])|tojson }};
     const rawEmails = {{ form_data.get('mail_to', [])|tojson }};
-    
-    // Default config when creating new is global exact
-    let isGlobalExact = true;
-    if (rawTerms && rawTerms.length > 0) {
-        isGlobalExact = rawTerms.every(t => t.exact === true);
-    }
-    
-    initializeForm(rawTerms, rawEmails, isGlobalExact);
+
+    initializeForm(rawTerms, rawEmails);
 });
 </script>
 {% endblock %}
