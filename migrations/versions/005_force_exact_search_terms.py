@@ -22,7 +22,15 @@ def upgrade() -> None:
     if "search_terms" not in inspector.get_table_names():
         return
 
-    op.execute(sa.text("UPDATE search_terms SET exact = 1 WHERE exact = 0"))
+    search_terms = sa.table(
+        "search_terms",
+        sa.column("exact", sa.Boolean()),
+    )
+    op.execute(
+        search_terms.update()
+        .where(search_terms.c.exact.is_(sa.false()))
+        .values(exact=sa.true())
+    )
 
 
 def downgrade() -> None:
